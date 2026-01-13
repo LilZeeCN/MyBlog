@@ -1,14 +1,12 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://yourblog.com',
   output: 'server', // 服务器模式支持动态路由
-  adapter: node({
-    mode: 'standalone'
-  }),
+  adapter: vercel(),
   integrations: [
     react({
       experimentalReactChildren: true
