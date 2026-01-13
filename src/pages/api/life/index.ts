@@ -1,50 +1,37 @@
 import type { APIRoute } from 'astro';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
-
-const DATA_DIR = path.join(process.cwd(), '.data');
-const STORAGE_KEY = 'warm_blog_life_moments';
-
-function getAll(): any[] {
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateData(items: any[]): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
-}
-
-function filterBySearch(items: any[], query: string): any[] {
-  const lowerQuery = query.toLowerCase();
-  return items.filter((item: any) =>
-    item.title?.toLowerCase().includes(lowerQuery) ||
-    item.content?.toLowerCase().includes(lowerQuery) ||
-    item.tags?.some((tag: string) => tag.toLowerCase().includes(lowerQuery))
-  );
-}
 
 // GET all life moments
 export const GET: APIRoute = async ({ url }) => {
   const searchParams = new URLSearchParams(url.search);
   const searchQuery = searchParams.get('search');
 
-  let moments = getAll();
+  let query = supabase
+    .from('life_moments')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (searchQuery) {
-    moments = filterBySearch(moments, searchQuery);
+    query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
   }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // 转换字段名以匹配前端期望的格式
+  const moments = data?.map(item => ({
+    ...item,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  })) || [];
 
   return new Response(JSON.stringify(moments), {
     status: 200,
@@ -65,27 +52,42 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const newItem = {
-      title,
-      content,
-      date: date || new Date().toISOString().split('T')[0],
-      mood: mood || '😊',
-      tags: tags || [],
-      slug: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const slug = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const id = crypto.randomUUID();
+
+    const { data: newItem, error } = await supabase
+      .from('life_moments')
+      .insert({
+        id,
+        title,
+        content,
+        date: date || new Date().toISOString().split('T')[0],
+        mood: mood || '😊',
+        tags: tags || [],
+        slug,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: '创建失败' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 转换字段名
+    const response = {
+      ...newItem,
+      createdAt: newItem.created_at,
+      updatedAt: newItem.updated_at
     };
 
-    const items = getAll();
-    items.push(newItem);
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: newItem }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '创建失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -106,34 +108,39 @@ export const PUT: APIRoute = async ({ request }) => {
       });
     }
 
-    const items = getAll();
-    const index = items.findIndex((i: any) => i.id === id);
+    const { data: updated, error } = await supabase
+      .from('life_moments')
+      .update({
+        title,
+        content,
+        date,
+        mood,
+        tags,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (index === -1) {
+    if (error || !updated) {
       return new Response(JSON.stringify({ error: '内容不存在' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const updated = {
-      ...items[index],
-      title,
-      content,
-      date,
-      mood,
-      tags,
-      updatedAt: new Date().toISOString(),
+    // 转换字段名
+    const response = {
+      ...updated,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at
     };
 
-    items[index] = updated;
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: updated }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '更新失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

@@ -15,7 +15,8 @@
       "Bash(env)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -p 443\" git push:*)"
     ]
   }
 }
