@@ -1,0 +1,112 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+
+<Layout title="编辑吐槽 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">✏️ 编辑吐槽</h1>
+      <p class="text-text-muted">修改吐槽内容</p>
+    </section>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <form id="rant-form" class="hidden glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">标题</label>
+        <input type="text" id="title" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">内容</label>
+        <textarea id="content" rows="6" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">愤怒指数 (1-10)</label>
+        <div class="flex items-center gap-4">
+          <input type="range" id="anger-level" min="1" max="10" value="5" required class="flex-1" />
+          <span id="anger-display" class="text-2xl font-bold w-16 text-center">5</span>
+        </div>
+        <div class="flex justify-between text-xs text-text-muted mt-2">
+          <span>😐 轻微</span>
+          <span>😤 中等</span>
+          <span>🤬 爆炸</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">分类</label>
+        <input type="text" id="category" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          保存修改
+        </button>
+        <a href="/rants" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../../scripts/content-manager.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+
+        console.log('正在编辑 slug:', slug);
+        const rant = window.rantsManager.getItem(slug);
+        console.log('找到的吐槽:', rant);
+
+        const loading = document.getElementById('loading')!;
+        const form = document.getElementById('rant-form') as HTMLFormElement;
+        const angerLevel = document.getElementById('anger-level') as HTMLInputElement;
+        const angerDisplay = document.getElementById('anger-display')!;
+
+        if (!rant) {
+          alert('未找到该吐槽');
+          window.location.href = '/rants';
+          return;
+        }
+
+        loading.classList.add('hidden');
+        form.classList.remove('hidden');
+
+        (document.getElementById('title') as HTMLInputElement).value = rant.title || '';
+        (document.getElementById('content') as HTMLTextAreaElement).value = rant.content || '';
+        angerLevel.value = (rant.angerLevel || 5).toString();
+        angerDisplay.textContent = angerLevel.value;
+        (document.getElementById('category') as HTMLInputElement).value = rant.category || '';
+
+        // 更新愤怒指数显示
+        angerLevel.addEventListener('input', () => {
+          angerDisplay.textContent = angerLevel.value;
+        });
+
+        form.addEventListener('submit', (e: Event) => {
+          e.preventDefault();
+
+          const updates = {
+            title: (document.getElementById('title') as HTMLInputElement).value,
+            content: (document.getElementById('content') as HTMLTextAreaElement).value,
+            angerLevel: parseInt(angerLevel.value),
+            category: (document.getElementById('category') as HTMLInputElement).value
+          };
+
+          try {
+            window.rantsManager.updateItem(rant.id, updates);
+            alert('修改已保存！');
+            window.location.href = '/rants';
+          } catch (error: any) {
+            alert('保存失败：' + error.message);
+          }
+        });
+      }, 100);
+    });
+  </script>
+</Layout>

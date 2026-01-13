@@ -1,0 +1,87 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = '我的温馨博客',
+  description = '一个温馨丝滑的个人博客，分享生活、哲学思考、吐槽、学习进展和代码项目'
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen">
+    <div class="flex flex-col min-h-screen">
+      <header class="sticky top-0 z-50 glass-effect border-b border-primary-200">
+        <nav class="container mx-auto px-4 py-4">
+          <div class="flex items-center justify-between">
+            <a href="/" class="text-2xl font-bold text-text-primary hover:text-primary-300 transition-smooth">
+              🌸 我的博客
+            </a>
+            <ul class="hidden md:flex items-center gap-6">
+              <li><a href="/" class="hover:text-primary-300 transition-smooth">首页</a></li>
+              <li><a href="/blog" class="hover:text-primary-300 transition-smooth">博客</a></li>
+              <li><a href="/life" class="hover:text-primary-300 transition-smooth">生活</a></li>
+              <li><a href="/philosophy" class="hover:text-primary-300 transition-smooth">哲学</a></li>
+              <li><a href="/rants" class="hover:text-primary-300 transition-smooth">吐槽</a></li>
+              <li><a href="/learning" class="hover:text-primary-300 transition-smooth">学习</a></li>
+              <li><a href="/projects" class="hover:text-primary-300 transition-smooth">项目</a></li>
+            </ul>
+            <button id="mobile-menu-btn" class="md:hidden p-2">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          <!-- 移动端菜单 -->
+          <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-primary-200 pt-4">
+            <ul class="flex flex-col gap-4">
+              <li><a href="/" class="block hover:text-primary-300 transition-smooth">首页</a></li>
+              <li><a href="/blog" class="block hover:text-primary-300 transition-smooth">博客</a></li>
+              <li><a href="/life" class="block hover:text-primary-300 transition-smooth">生活</a></li>
+              <li><a href="/philosophy" class="block hover:text-primary-300 transition-smooth">哲学</a></li>
+              <li><a href="/rants" class="block hover:text-primary-300 transition-smooth">吐槽</a></li>
+              <li><a href="/learning" class="block hover:text-primary-300 transition-smooth">学习</a></li>
+              <li><a href="/projects" class="block hover:text-primary-300 transition-smooth">项目</a></li>
+            </ul>
+          </div>
+        </nav>
+      </header>
+
+      <main class="flex-1">
+        <slot />
+      </main>
+
+      <footer class="glass-effect border-t border-primary-200 mt-auto">
+        <div class="container mx-auto px-4 py-8">
+          <div class="text-center text-text-muted">
+            <p>&copy; {new Date().getFullYear()} 我的温馨博客. 用 ❤️ 制作</p>
+            <p class="mt-2 text-sm">Powered by Astro + Sanity</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // 移动端菜单切换
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      menuBtn?.addEventListener('click', () => {
+        mobileMenu?.classList.toggle('hidden');
+      });
+    </script>
+  </body>
+</html>

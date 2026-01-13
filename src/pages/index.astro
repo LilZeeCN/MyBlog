@@ -1,0 +1,203 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="首页 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12">
+    <!-- Hero 区域 -->
+    <section class="text-center mb-16 animate-fade-in">
+      <h1 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary-300 to-primary-400 bg-clip-text text-transparent">
+        欢迎来到我的温馨博客
+      </h1>
+      <p class="text-xl text-text-secondary max-w-2xl mx-auto">
+        一个充满温暖与思考的角落，记录生活、哲学、学习与代码的点点滴滴
+      </p>
+    </section>
+
+    <!-- 每日运势 -->
+    <section class="mb-16">
+      <!-- 未设置生日时显示 -->
+      <div id="horoscope-placeholder" class="glass-effect rounded-2xl p-8 max-w-md mx-auto text-center shadow-lg">
+        <div class="text-6xl mb-4 animate-float">✨</div>
+        <h2 class="text-2xl font-bold mb-4">今日运势</h2>
+        <p class="text-text-muted mb-4">设置你的生日来获取每日星座运势</p>
+        <button id="birthday-btn" class="px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+          设置生日
+        </button>
+      </div>
+
+      <!-- 设置生日后显示运势 -->
+      <div id="horoscope-display" class="hidden max-w-2xl mx-auto">
+        <div class="glass-effect rounded-2xl p-8 shadow-lg">
+          <!-- 运势头部 -->
+          <div class="text-center mb-6">
+            <div class="text-6xl mb-4 animate-float" id="horoscope-icon">✨</div>
+            <h2 class="text-3xl font-bold mb-2">
+              <span id="horoscope-sign">--</span>今日运势
+            </h2>
+            <p class="text-text-muted" id="horoscope-date">--</p>
+          </div>
+
+          <!-- 综合分数 -->
+          <div class="flex justify-center mb-6">
+            <div class="relative w-32 h-32">
+              <svg class="w-full h-full transform -rotate-90">
+                <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="none" class="text-primary-100"/>
+                <circle id="score-circle" cx="64" cy="64" r="56" stroke="url(#gradient)" stroke-width="8" fill="none"
+                  stroke-dasharray="352" stroke-dashoffset="352" stroke-linecap="round" class="transition-all duration-1000"/>
+                <defs>
+                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#D4A574"/>
+                    <stop offset="100%" stop-color="#E8D5C4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span id="horoscope-score" class="text-3xl font-bold text-primary-400">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 运势描述 -->
+          <div class="bg-primary-50 rounded-xl p-6 mb-6">
+            <p id="horoscope-forecast" class="text-lg text-center text-text-primary">--</p>
+          </div>
+
+          <!-- 各项指数 -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="text-center">
+              <div class="text-2xl mb-1">🍀</div>
+              <div class="text-sm text-text-muted">幸运</div>
+              <div id="luck-score" class="font-bold text-primary-400">--</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl mb-1">💖</div>
+              <div class="text-sm text-text-muted">爱情</div>
+              <div id="love-score" class="font-bold text-primary-400">--</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl mb-1">💼</div>
+              <div class="text-sm text-text-muted">事业</div>
+              <div id="career-score" class="font-bold text-primary-400">--</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl mb-1">💪</div>
+              <div class="text-sm text-text-muted">健康</div>
+              <div id="health-score" class="font-bold text-primary-400">--</div>
+            </div>
+          </div>
+
+          <!-- 幸运元素 -->
+          <div class="flex flex-wrap justify-center gap-4 mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🎨</span>
+              <span class="text-sm text-text-muted">幸运色:</span>
+              <span id="lucky-color" class="font-medium">--</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🔢</span>
+              <span class="text-sm text-text-muted">幸运数字:</span>
+              <span id="lucky-number" class="font-medium">--</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🕐</span>
+              <span class="text-sm text-text-muted">幸运时间:</span>
+              <span id="lucky-time" class="font-medium">--</span>
+            </div>
+          </div>
+
+          <!-- 心情和建议 -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-2 text-lg">
+              <span id="horoscope-mood">--</span>
+              <span class="text-text-muted">今日心情</span>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-4">
+              <div class="text-sm font-medium text-blue-600 mb-2">💡 今日建议</div>
+              <ul id="horoscope-advice" class="space-y-1 text-sm text-text-secondary">
+                <!-- 建议列表 -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- 修改生日按钮 -->
+          <div class="text-center mt-6">
+            <button id="change-birthday-btn" class="text-sm text-text-muted hover:text-primary-400 transition-smooth">
+              修改生日
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 板块导航 -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <a href="/life" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">🌱</div>
+        <h3 class="text-2xl font-bold mb-2">生活分享</h3>
+        <p class="text-text-muted">记录生活中的美好瞬间</p>
+      </a>
+
+      <a href="/philosophy" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">🧠</div>
+        <h3 class="text-2xl font-bold mb-2">哲学思考</h3>
+        <p class="text-text-muted">深度思考与智慧分享</p>
+      </a>
+
+      <a href="/rants" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">💢</div>
+        <h3 class="text-2xl font-bold mb-2">吐槽</h3>
+        <p class="text-text-muted">释放情绪，共鸣心声</p>
+      </a>
+
+      <a href="/learning" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">📚</div>
+        <h3 class="text-2xl font-bold mb-2">学习进展</h3>
+        <p class="text-text-muted">持续学习，不断成长</p>
+      </a>
+
+      <a href="/projects" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">💻</div>
+        <h3 class="text-2xl font-bold mb-2">代码项目</h3>
+        <p class="text-text-muted">展示我的编程作品</p>
+      </a>
+
+      <a href="/blog" class="glass-effect rounded-2xl p-8 hover:shadow-glow transition-smooth group">
+        <div class="text-5xl mb-4 group-hover:scale-110 transition-transform">📝</div>
+        <h3 class="text-2xl font-bold mb-2">博客文章</h3>
+        <p class="text-text-muted">所有文章汇总</p>
+      </a>
+    </section>
+  </div>
+
+  <!-- 生日设置模态框 -->
+  <dialog id="birthday-modal" class="rounded-2xl p-8 shadow-lg backdrop:bg-black/50 max-w-md w-full mx-auto">
+    <form method="dialog" class="space-y-4">
+      <h3 class="text-2xl font-bold mb-4">设置你的生日</h3>
+      <p class="text-text-muted mb-4">我们将根据你的生日计算星座，并显示每日运势</p>
+      <input
+        type="date"
+        id="birthday-input"
+        name="birthday"
+        class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"
+        required
+      />
+      <div class="flex gap-4 justify-end">
+        <button value="cancel" class="px-6 py-3 rounded-lg border border-primary-200 hover:bg-primary-50 transition-smooth">
+          取消
+        </button>
+        <button
+          value="confirm"
+          type="button"
+          id="save-birthday"
+          class="px-6 py-3 rounded-lg bg-primary-300 text-white hover:bg-primary-400 transition-smooth"
+        >
+          保存
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 客户端脚本 -->
+  <script src="../scripts/horoscope.js"></script>
+</Layout>

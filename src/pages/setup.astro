@@ -1,0 +1,440 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="初始化示例数据 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">🚀 初始化示例数据</h1>
+      <p class="text-text-muted">为你的博客加载优秀的示例模板</p>
+    </section>
+
+    <div class="glass-effect rounded-2xl p-8 space-y-6">
+      <!-- 状态显示 -->
+      <div id="status-panel" class="hidden">
+        <div class="p-4 rounded-lg mb-6" id="status-box">
+          <p id="status-message" class="font-medium"></p>
+        </div>
+      </div>
+
+      <!-- 示例数据预览 -->
+      <div class="space-y-4">
+        <h2 class="text-2xl font-bold mb-4">📦 包含的示例内容</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 生活模块 -->
+          <div class="border border-primary-200 rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">🌱 生活瞬间 (3个)</h3>
+            <ul class="text-sm text-text-muted space-y-1">
+              <li>• 春日赏樱</li>
+              <li>• 深夜编程的灵感</li>
+              <li>• 学会做咖啡</li>
+            </ul>
+          </div>
+
+          <!-- 哲学模块 -->
+          <div class="border border-primary-200 rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">🧠 哲学思考 (3个)</h3>
+            <ul class="text-sm text-text-muted space-y-1">
+              <li>• 存在先于本质 - 萨特</li>
+              <li>• 认识你自己 - 苏格拉底</li>
+              <li>• 西西弗斯的幸福 - 加缪</li>
+            </ul>
+          </div>
+
+          <!-- 吐槽模块 -->
+          <div class="border border-primary-200 rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">💢 吐槽专区 (3个)</h3>
+            <ul class="text-sm text-text-muted space-y-1">
+              <li>• 毫无意义的会议</li>
+              <li>• 看不懂的代码评审</li>
+              <li>• 咖啡馆的慢网速</li>
+            </ul>
+          </div>
+
+          <!-- 学习模块 -->
+          <div class="border border-primary-200 rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">📚 学习项目 (3个)</h3>
+            <ul class="text-sm text-text-muted space-y-1">
+              <li>• React 深度学习计划</li>
+              <li>• TypeScript 类型体操</li>
+              <li>• 系统设计与架构</li>
+            </ul>
+          </div>
+
+          <!-- 项目模块 -->
+          <div class="border border-primary-200 rounded-lg p-4">
+            <h3 class="font-bold text-lg mb-2">💻 代码项目 (3个)</h3>
+            <ul class="text-sm text-text-muted space-y-1">
+              <li>• AI 写作助手</li>
+              <li>• 极简任务管理器</li>
+              <li>• Aurora 设计系统</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="flex flex-col gap-4 mt-8">
+        <button
+          id="init-btn"
+          class="w-full px-6 py-4 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-bold text-lg"
+        >
+          🎉 初始化示例数据
+        </button>
+
+        <button
+          id="reset-btn"
+          class="w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth font-medium"
+        >
+          🔄 清除所有数据并重新初始化
+        </button>
+
+        <a
+          href="/"
+          class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center"
+        >
+          返回首页
+        </a>
+      </div>
+
+      <!-- 提示信息 -->
+      <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h4 class="font-bold text-yellow-800 mb-2">⚠️ 注意事项</h4>
+        <ul class="text-sm text-yellow-700 space-y-1">
+          <li>• 如果已经有数据，初始化按钮不会覆盖现有数据</li>
+          <li>• 重置按钮会清除所有现有数据，请谨慎使用</li>
+          <li>• 数据存储在浏览器本地，清除浏览器数据会丢失所有内容</li>
+          <li>• 建议定期导出备份重要数据</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 生成唯一ID
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
+
+    // 生成slug
+    function generateSlug(title) {
+      return title
+        .toLowerCase()
+        .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    // 示例数据
+    const lifeExamples = [
+      {
+        id: generateId(),
+        slug: 'spring-cherry-blossoms',
+        title: '春日赏樱',
+        date: '2024年3月',
+        content: '今天和朋友们一起去公园赏樱花。阳光透过粉色的花瓣洒下来，空气中弥漫着淡淡的花香。我们在树下野餐，聊天，拍照，度过了美好的一天。这种简单的快乐让我觉得生活真的很美好。',
+        mood: '😊 开心',
+        tags: ['春天', '樱花', '朋友', '野餐', '美好时光'],
+        createdAt: new Date('2024-03-15').toISOString(),
+        updatedAt: new Date('2024-03-15').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'midnight-coding',
+        title: '深夜编程的灵感',
+        date: '2024年2月',
+        content: '凌晨两点，突然想到了一个解决bug的方法。打开电脑，沉浸在代码的世界里，周围一片寂静，只有键盘敲击的声音。当程序终于跑通的那一刻，成就感油然而生。虽然熬夜不好，但这种专注的状态真的很迷人。',
+        mood: '🤓 专注',
+        tags: ['编程', '深夜', '灵感', '成就感', '代码'],
+        createdAt: new Date('2024-02-20').toISOString(),
+        updatedAt: new Date('2024-02-20').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'first-coffee',
+        title: '学会做咖啡',
+        date: '2024年1月',
+        content: '终于入手了一台咖啡机！今天第一次尝试做手冲咖啡，从磨豆到萃取，整个过程充满仪式感。虽然第一杯有点苦，但闻着咖啡香，感觉自己像个专业的咖啡师。期待明天做出更好喝的咖啡。',
+        mood: '☕ 充实',
+        tags: ['咖啡', '新技能', '生活仪式感', '学习'],
+        createdAt: new Date('2024-01-10').toISOString(),
+        updatedAt: new Date('2024-01-10').toISOString()
+      }
+    ];
+
+    const philosophyExamples = [
+      {
+        id: generateId(),
+        slug: 'existence-precedes-essence',
+        quote: '存在先于本质',
+        author: '萨特',
+        category: '存在主义',
+        content: '这句话深深触动了我。我们不是被预先定义好的，而是通过自己的选择和行动来定义自己。每一个决定都在塑造着我们成为什么样的人。这既让人感到自由，又让人感到责任重大。我们每个人都是自己人生的作者。',
+        tags: ['存在主义', '自由意志', '选择', '人生意义'],
+        createdAt: new Date('2024-03-10').toISOString(),
+        updatedAt: new Date('2024-03-10').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'know-thyself',
+        quote: '认识你自己',
+        author: '苏格拉底',
+        category: '古希腊哲学',
+        content: '在这个信息爆炸的时代，我们很容易迷失在外界的声音中。什么是真正的自己？我的价值观、信念、梦想是从哪里来的？是自己思考得出的，还是被社会灌输的？认识自己是一生的功课，也是最困难的功课。',
+        tags: ['自我认知', '反思', '古希腊哲学', '智慧'],
+        createdAt: new Date('2024-02-25').toISOString(),
+        updatedAt: new Date('2024-02-25').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'absurd-hero',
+        quote: '我们必须想象西西弗斯是幸福的',
+        author: '加缪',
+        category: '荒诞主义',
+        content: '生活本身可能没有意义，但我们可以在这种荒诞中找到自己的意义。就像西西弗斯推石头上山，明知会滚下来还要继续推。这不是悲剧，而是一种积极的反抗。我们在重复的日常中，依然可以找到属于自己的快乐和价值。',
+        tags: ['荒诞主义', '人生意义', '积极态度', '反抗'],
+        createdAt: new Date('2024-01-15').toISOString(),
+        updatedAt: new Date('2024-01-15').toISOString()
+      }
+    ];
+
+    const rantsExamples = [
+      {
+        id: generateId(),
+        slug: 'useless-meeting',
+        title: '又是一场毫无意义的会议',
+        content: '今天开了3个小时的会，结果啥也没决定！每个人都在说车轱辘话，重要的问题避而不谈，不重要的细节反复讨论。最后还要"会后再讨论"。拜托，能不能直接点？我的时间真的很宝贵好吗！这种会议完全可以用一封邮件解决。',
+        angerLevel: 7,
+        category: '工作',
+        reactions: 0,
+        createdAt: new Date('2024-03-18').toISOString(),
+        updatedAt: new Date('2024-03-18').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'bad-code-review',
+        title: '看不懂的代码评审',
+        content: '刚收到一个代码评审意见："这里可以优化"。什么？！怎么优化？为什么要优化？有什么问题吗？能不能说清楚一点？我又不是你肚子里的蛔虫。要么就说具体点，要么就别提！这种模糊的评审意见只会浪费大家时间。',
+        angerLevel: 8,
+        category: '技术',
+        reactions: 0,
+        createdAt: new Date('2024-03-05').toISOString(),
+        updatedAt: new Date('2024-03-05').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'slow-wifi',
+        title: '咖啡馆的网速能不能争点气',
+        content: '明明宣传说"提供高速WiFi"，结果连个网页都打不开。发个消息要等半天，更别提视频会议了。关键是密码还设置得超级复杂，连上去发现还不如用手机流量快。这年头，没有好网络还敢开咖啡馆？',
+        angerLevel: 5,
+        category: '生活',
+        reactions: 0,
+        createdAt: new Date('2024-02-28').toISOString(),
+        updatedAt: new Date('2024-02-28').toISOString()
+      }
+    ];
+
+    const learningExamples = [
+      {
+        id: generateId(),
+        slug: 'react-deep-dive',
+        title: 'React 深度学习计划',
+        description: '系统学习 React 的核心原理，包括虚拟 DOM、Hooks 原理、性能优化等。目标是能够深入理解 React 的工作机制，并应用到实际项目中。',
+        status: '进行中',
+        progress: 65,
+        resources: [
+          'https://react.dev/learn',
+          'https://github.com/reactjs/react-basic',
+          'https://epicreact.dev/'
+        ],
+        startDate: '2024-01-01',
+        endDate: '2024-04-30',
+        createdAt: new Date('2024-01-01').toISOString(),
+        updatedAt: new Date('2024-03-20').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'typescript-mastery',
+        title: 'TypeScript 类型体操训练',
+        description: '掌握 TypeScript 的高级类型系统，包括泛型、条件类型、映射类型等。通过实战练习提升类型编程能力，写出更安全、更优雅的代码。',
+        status: '已完成',
+        progress: 100,
+        resources: [
+          'https://www.typescriptlang.org/docs/',
+          'https://github.com/type-challenges/type-challenges',
+          'https://www.totaltypescript.com/'
+        ],
+        startDate: '2023-11-01',
+        endDate: '2024-01-31',
+        createdAt: new Date('2023-11-01').toISOString(),
+        updatedAt: new Date('2024-01-31').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'system-design',
+        title: '系统设计与架构',
+        description: '学习大型系统的设计思路和常见架构模式。包括微服务、负载均衡、缓存策略、数据库设计等。为成为架构师做准备。',
+        status: '计划中',
+        progress: 0,
+        resources: [
+          'https://github.com/donnemartin/system-design-primer',
+          'https://www.educative.io/courses/grokking-the-system-design-interview'
+        ],
+        startDate: '2024-05-01',
+        endDate: '2024-08-31',
+        createdAt: new Date('2024-03-15').toISOString(),
+        updatedAt: new Date('2024-03-15').toISOString()
+      }
+    ];
+
+    const projectsExamples = [
+      {
+        id: generateId(),
+        slug: 'ai-writing-assistant',
+        title: 'AI 写作助手',
+        description: '基于大语言模型的智能写作助手，支持文章润色、语法检查、风格转换等功能。使用 React + Node.js + OpenAI API 构建，提供流畅的用户体验。',
+        coverEmoji: '✍️',
+        status: 'Stable',
+        technologies: ['React', 'TypeScript', 'Node.js', 'OpenAI API', 'Tailwind CSS'],
+        githubUrl: 'https://github.com/yourusername/ai-writing-assistant',
+        demoUrl: 'https://ai-writing.demo.com',
+        stars: 248,
+        forks: 32,
+        createdAt: new Date('2024-01-10').toISOString(),
+        updatedAt: new Date('2024-03-20').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'task-tracker',
+        title: '极简任务管理器',
+        description: '一个极简风格的任务管理工具，专注于提升工作效率。支持番茄钟、项目分组、进度追踪等功能。界面简洁优雅，没有任何多余的干扰。',
+        coverEmoji: '📋',
+        status: 'Beta',
+        technologies: ['Vue 3', 'Vite', 'Pinia', 'IndexedDB'],
+        githubUrl: 'https://github.com/yourusername/task-tracker',
+        demoUrl: 'https://tasks.demo.com',
+        stars: 156,
+        forks: 18,
+        createdAt: new Date('2024-02-01').toISOString(),
+        updatedAt: new Date('2024-03-18').toISOString()
+      },
+      {
+        id: generateId(),
+        slug: 'design-system',
+        title: 'Aurora 设计系统',
+        description: '一套现代化的 UI 组件库，包含 50+ 精心设计的组件。支持深色模式、主题定制、响应式设计。为开发者提供一致、优雅的设计解决方案。',
+        coverEmoji: '🎨',
+        status: 'WIP',
+        technologies: ['React', 'Storybook', 'CSS Modules', 'Framer Motion'],
+        githubUrl: 'https://github.com/yourusername/aurora-ui',
+        demoUrl: '',
+        stars: 89,
+        forks: 12,
+        createdAt: new Date('2024-03-01').toISOString(),
+        updatedAt: new Date('2024-03-20').toISOString()
+      }
+    ];
+
+    // 初始化数据函数
+    function initializeExampleData() {
+      try {
+        const hasInitialized = localStorage.getItem('examples_initialized');
+        if (hasInitialized) {
+          return {
+            success: false,
+            message: '示例数据已存在'
+          };
+        }
+
+        localStorage.setItem('life_moments', JSON.stringify(lifeExamples));
+        localStorage.setItem('philosophy_thoughts', JSON.stringify(philosophyExamples));
+        localStorage.setItem('rants', JSON.stringify(rantsExamples));
+        localStorage.setItem('learning_projects', JSON.stringify(learningExamples));
+        localStorage.setItem('code_projects', JSON.stringify(projectsExamples));
+        localStorage.setItem('examples_initialized', 'true');
+
+        return {
+          success: true,
+          message: '所有示例数据初始化成功',
+          data: {
+            life: lifeExamples.length,
+            philosophy: philosophyExamples.length,
+            rants: rantsExamples.length,
+            learning: learningExamples.length,
+            projects: projectsExamples.length
+          }
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: '初始化失败：' + error.message
+        };
+      }
+    }
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', () => {
+      const initBtn = document.getElementById('init-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const statusPanel = document.getElementById('status-panel');
+      const statusBox = document.getElementById('status-box');
+      const statusMessage = document.getElementById('status-message');
+
+      function showStatus(message, isSuccess) {
+        statusPanel.classList.remove('hidden');
+        statusBox.className = `p-4 rounded-lg mb-6 ${
+          isSuccess
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+        }`;
+        statusMessage.textContent = message;
+        statusMessage.className = `font-medium ${
+          isSuccess ? 'text-green-800' : 'text-red-800'
+        }`;
+      }
+
+      // 初始化按钮
+      initBtn.addEventListener('click', () => {
+        const result = initializeExampleData();
+
+        if (result.success) {
+          showStatus(
+            `✅ ${result.message}！已添加 ${result.data.life + result.data.philosophy + result.data.rants + result.data.learning + result.data.projects} 个示例。`,
+            true
+          );
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        } else {
+          showStatus(`ℹ️ ${result.message}`, false);
+        }
+      });
+
+      // 重置按钮
+      resetBtn.addEventListener('click', () => {
+        if (confirm('⚠️ 确定要清除所有数据并重新初始化吗？\n\n此操作将删除所有现有的：\n• 生活瞬间\n• 哲学思考\n• 吐槽内容\n• 学习项目\n• 代码项目\n\n此操作不可撤销！')) {
+          localStorage.removeItem('life_moments');
+          localStorage.removeItem('philosophy_thoughts');
+          localStorage.removeItem('rants');
+          localStorage.removeItem('learning_projects');
+          localStorage.removeItem('code_projects');
+          localStorage.removeItem('examples_initialized');
+
+          const result = initializeExampleData();
+          if (result.success) {
+            showStatus('✅ 数据重置成功！页面即将刷新...', true);
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          }
+        }
+      });
+
+      // 检查是否已初始化
+      const hasInitialized = localStorage.getItem('examples_initialized');
+      if (hasInitialized) {
+        showStatus('ℹ️ 示例数据已存在。如需重新初始化，请点击"清除所有数据并重新初始化"按钮。', false);
+      }
+    });
+  </script>
+</Layout>

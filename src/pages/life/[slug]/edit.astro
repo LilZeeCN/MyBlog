@@ -1,0 +1,107 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+
+<Layout title="编辑生活瞬间 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">✏️ 编辑生活瞬间</h1>
+      <p class="text-text-muted">修改记录内容</p>
+    </section>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <form id="moment-form" class="hidden glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">标题</label>
+        <input type="text" id="title" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">日期</label>
+        <input type="text" id="date" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">内容</label>
+        <textarea id="content" rows="6" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">心情</label>
+        <input type="text" id="mood" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">标签（用逗号分隔）</label>
+        <input type="text" id="tags" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          保存修改
+        </button>
+        <a href="/life" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../../scripts/content-manager.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 等待 DOM 和脚本加载完成
+      setTimeout(() => {
+        // 解码 URL 中的 slug（处理中文等特殊字符）
+        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+
+        console.log('正在编辑 slug:', slug);
+        console.log('所有生活瞬间:', window.lifeManager.getAllItems());
+
+        const moment = window.lifeManager.getItem(slug!);
+        console.log('找到的瞬间:', moment);
+
+        const loading = document.getElementById('loading')!;
+        const form = document.getElementById('moment-form') as HTMLFormElement;
+
+        if (!moment) {
+          alert('未找到该瞬间');
+          window.location.href = '/life';
+          return;
+        }
+
+        loading.classList.add('hidden');
+        form.classList.remove('hidden');
+
+        (document.getElementById('title') as HTMLInputElement).value = moment.title || '';
+        (document.getElementById('date') as HTMLInputElement).value = moment.date || '';
+        (document.getElementById('content') as HTMLTextAreaElement).value = moment.content || '';
+        (document.getElementById('mood') as HTMLInputElement).value = moment.mood || '';
+        (document.getElementById('tags') as HTMLInputElement).value = moment.tags?.join(', ') || '';
+
+        form.addEventListener('submit', (e: Event) => {
+          e.preventDefault();
+
+          const updates = {
+            title: (document.getElementById('title') as HTMLInputElement).value,
+            date: (document.getElementById('date') as HTMLInputElement).value,
+            content: (document.getElementById('content') as HTMLTextAreaElement).value,
+            mood: (document.getElementById('mood') as HTMLInputElement).value,
+            tags: (document.getElementById('tags') as HTMLInputElement).value.split(',').map((t: string) => t.trim()).filter(Boolean)
+          };
+
+          try {
+            window.lifeManager.updateItem(moment.id, updates);
+            alert('修改已保存！');
+            window.location.href = '/life';
+          } catch (error: any) {
+            alert('保存失败：' + error.message);
+          }
+        });
+      }, 100);
+    });
+  </script>
+</Layout>

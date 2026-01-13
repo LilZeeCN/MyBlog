@@ -1,0 +1,153 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="吐槽 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12">
+    <!-- 页面标题 -->
+    <section class="text-center mb-12">
+      <div class="text-6xl mb-4 animate-float">💢</div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">吐槽区</h1>
+      <p class="text-xl text-text-secondary">释放情绪，共鸣心声</p>
+      <a href="/rants/new" class="inline-block mt-6 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth font-medium">
+        💢 发布吐槽
+      </a>
+    </section>
+
+    <!-- 吐槽列表 -->
+    <section id="rants-list" class="max-w-4xl mx-auto space-y-6">
+      <div class="text-center py-12">
+        <div class="animate-pulse">正在加载...</div>
+      </div>
+    </section>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">💢</div>
+      <p class="text-xl text-text-muted mb-6">还没有吐槽，开始发泄第一个吧</p>
+      <a href="/rants/new" class="inline-block px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth">
+        发布吐槽
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // 格式化日期
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 加载并显示吐槽
+    async function loadRants(): Promise<void> {
+      const container = document.getElementById('rants-list');
+      const emptyState = document.getElementById('empty-state');
+
+      if (!container || !emptyState) return;
+
+      try {
+        const response = await fetch('/api/rants');
+        if (!response.ok) throw new Error('获取数据失败');
+        const rants = await response.json();
+
+        container.innerHTML = '';
+
+        if (!rants || rants.length === 0) {
+          container.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        rants.forEach((rant: any, index: number) => {
+          const angerLevel = rant.angerLevel || 5;
+          let bgColor = 'bg-yellow-50/50';
+          let emojiColor = 'bg-yellow-200';
+          let emoji = '😐';
+          let angerBg = 'bg-yellow-100 text-yellow-600';
+          let hoverColor = 'hover:text-yellow-600';
+
+          if (angerLevel >= 8) {
+            bgColor = 'bg-red-50/50';
+            emojiColor = 'bg-red-200';
+            emoji = '🤬';
+            angerBg = 'bg-red-100 text-red-600';
+            hoverColor = 'hover:text-red-500';
+          } else if (angerLevel >= 5) {
+            bgColor = 'bg-orange-50/50';
+            emojiColor = 'bg-orange-200';
+            emoji = '😤';
+            angerBg = 'bg-orange-100 text-orange-600';
+            hoverColor = 'hover:text-orange-500';
+          }
+
+          const div = document.createElement('div');
+          div.className = 'relative animate-slide-up';
+          div.style.animationDelay = `${index * 0.1}s`;
+
+          div.innerHTML = `
+            <div class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth ${bgColor}">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-full ${emojiColor} flex items-center justify-center text-2xl flex-shrink-0">
+                  ${emoji}
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <a href="/rants/${rant.slug}" class="font-bold hover:text-primary-400 transition-smooth">${rant.title}</a>
+                    <span class="px-2 py-1 ${angerBg} rounded text-xs font-bold">愤怒指数: ${angerLevel}/10</span>
+                  </div>
+                  <p class="text-text-secondary mb-3">
+                    ${rant.content}
+                  </p>
+                  <div class="flex items-center gap-4 text-sm text-text-muted mb-3">
+                    <span>📅 ${formatDate(rant.createdAt)}</span>
+                    ${rant.category ? `<span>🏷️ ${rant.category}</span>` : ''}
+                    <span class="flex items-center gap-1 cursor-pointer ${hoverColor} transition-colors">
+                      👊 共鸣 <span class="font-bold">${rant.reactions || 0}</span>
+                    </span>
+                  </div>
+                  <div class="flex gap-4">
+                    <a href="/rants/${rant.slug}" class="text-primary-400 hover:text-primary-500 transition-smooth text-sm">查看详情</a>
+                    <a href="/rants/${rant.slug}/edit" class="text-blue-500 hover:text-blue-600 transition-smooth text-sm">编辑</a>
+                    <button class="delete-btn text-red-500 hover:text-red-600 transition-smooth text-sm" data-id="${rant.id}">删除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(div);
+        });
+
+        // 添加删除事件监听
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLElement).getAttribute('data-id')!;
+            if (confirm('确定要删除这个吐槽吗？')) {
+              try {
+                const response = await fetch(`/api/rants/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('删除失败');
+                loadRants();
+              } catch (error: any) {
+                alert('删除失败：' + error.message);
+              }
+            }
+          });
+        });
+      } catch (error: any) {
+        container.innerHTML = `<p class="text-red-500 text-center py-12">加载失败：${error.message}</p>`;
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRants();
+    });
+  </script>
+</Layout>

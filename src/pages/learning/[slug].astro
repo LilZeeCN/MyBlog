@@ -1,0 +1,172 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="学习项目详情 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <a href="/learning" class="inline-flex items-center gap-2 text-text-muted hover:text-primary-400 transition-smooth mb-8">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      返回学习列表
+    </a>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <div id="not-found" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold mb-4">未找到该学习项目</h2>
+      <a href="/learning" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">返回列表</a>
+    </div>
+
+    <article id="project-content" class="hidden">
+      <div class="glass-effect rounded-2xl p-8">
+        <div class="flex items-center justify-between mb-6">
+          <h1 id="project-title" class="text-3xl font-bold"></h1>
+          <span id="project-status" class="px-4 py-2 rounded-full text-sm font-medium"></span>
+        </div>
+
+        <p id="project-description" class="text-text-secondary text-lg leading-relaxed mb-6"></p>
+
+        <!-- 进度条 -->
+        <div class="mb-6">
+          <div class="flex justify-between text-sm mb-2">
+            <span class="font-medium">学习进度</span>
+            <span id="progress-text" class="font-bold"></span>
+          </div>
+          <div class="h-4 bg-primary-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-primary-300 to-primary-400 rounded-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 学习资源 -->
+        <div id="resources-section" class="hidden mb-6">
+          <h3 class="text-lg font-bold mb-3">📚 学习资源</h3>
+          <div id="resources-list" class="space-y-2"></div>
+        </div>
+
+        <!-- 日期信息 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
+          <div id="start-date-section" class="hidden">
+            <span class="text-text-muted">开始时间：</span>
+            <span id="start-date" class="font-medium"></span>
+          </div>
+          <div id="end-date-section" class="hidden">
+            <span class="text-text-muted">预计完成：</span>
+            <span id="end-date" class="font-medium"></span>
+          </div>
+        </div>
+
+        <div class="flex gap-4 border-t pt-6">
+          <a id="edit-link" href="#" class="px-6 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">编辑</a>
+          <button id="delete-btn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth">删除</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    // 加载并显示学习项目详情
+    async function loadProject(): Promise<void> {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const slug = decodeURIComponent(pathParts[pathParts.length - 1]);
+
+      const loading = document.getElementById('loading');
+      const notFound = document.getElementById('not-found');
+      const content = document.getElementById('project-content');
+
+      if (!loading || !notFound || !content) return;
+
+      try {
+        const response = await fetch('/api/learning');
+        if (!response.ok) throw new Error('获取数据失败');
+        const allProjects = await response.json();
+
+        const project = allProjects.find((p: any) => p.slug === slug);
+
+        loading.classList.add('hidden');
+
+        if (!project) {
+          notFound.classList.remove('hidden');
+          return;
+        }
+
+        content.classList.remove('hidden');
+
+        (document.getElementById('project-title')!).textContent = project.title;
+        (document.getElementById('project-description')!).textContent = project.description;
+
+        // 状态样式
+        const statusEl = document.getElementById('project-status')!;
+        const status = project.status || '进行中';
+        let statusClass = 'bg-green-100 text-green-600';
+        if (status === '已完成') {
+          statusClass = 'bg-functional-success text-white';
+        } else if (status === '计划中') {
+          statusClass = 'bg-yellow-100 text-yellow-600';
+        } else if (status === '已暂停') {
+          statusClass = 'bg-gray-200 text-gray-600';
+        }
+        statusEl.className = `px-4 py-2 rounded-full text-sm font-medium ${statusClass}`;
+        statusEl.textContent = status;
+
+        // 进度
+        const progress = project.progress || 0;
+        (document.getElementById('progress-text')!).textContent = `${progress}%`;
+        (document.getElementById('progress-bar')!)!.style.width = `${progress}%`;
+
+        // 资源
+        if (project.resources?.length > 0) {
+          const resourcesSection = document.getElementById('resources-section')!;
+          const resourcesList = document.getElementById('resources-list')!;
+          resourcesSection.classList.remove('hidden');
+          project.resources.forEach((resource: string) => {
+            const link = document.createElement('a');
+            link.href = resource;
+            link.target = '_blank';
+            link.className = 'flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-smooth';
+            link.innerHTML = `<span>🔗</span><span>${resource}</span>`;
+            resourcesList.appendChild(link);
+          });
+        }
+
+        // 日期
+        if (project.startDate) {
+          const startDateSection = document.getElementById('start-date-section')!;
+          startDateSection.classList.remove('hidden');
+          (document.getElementById('start-date')!).textContent = project.startDate;
+        }
+        if (project.endDate) {
+          const endDateSection = document.getElementById('end-date-section')!;
+          endDateSection.classList.remove('hidden');
+          (document.getElementById('end-date')!).textContent = project.endDate;
+        }
+
+        (document.getElementById('edit-link')!)!.setAttribute('href', `/learning/${slug}/edit`);
+        (document.getElementById('delete-btn')!)!.addEventListener('click', async () => {
+          if (confirm('确定要删除这个学习项目吗？')) {
+            try {
+              const deleteResponse = await fetch(`/api/learning/${project.id}`, { method: 'DELETE' });
+              if (!deleteResponse.ok) throw new Error('删除失败');
+              alert('已删除');
+              window.location.href = '/learning';
+            } catch (error: any) {
+              alert('删除失败：' + error.message);
+            }
+          }
+        });
+      } catch (error: any) {
+        if (loading) {
+          loading.innerHTML = `<p class="text-red-500">加载失败：${error.message}</p>`;
+        }
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProject();
+    });
+  </script>
+</Layout>

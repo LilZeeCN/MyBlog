@@ -1,0 +1,173 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="吐槽详情 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <a href="/rants" class="inline-flex items-center gap-2 text-text-muted hover:text-primary-400 transition-smooth mb-8">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      返回吐槽区
+    </a>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <div id="not-found" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold mb-4">未找到该吐槽</h2>
+      <a href="/rants" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">返回列表</a>
+    </div>
+
+    <article id="rant-content" class="hidden">
+      <div id="rant-card" class="glass-effect rounded-2xl p-8">
+        <div class="flex items-start gap-4 mb-6">
+          <div id="rant-emoji" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl flex-shrink-0"></div>
+          <div class="flex-1">
+            <h1 id="rant-title" class="text-2xl font-bold mb-2"></h1>
+            <div class="flex items-center gap-4 text-sm text-text-muted">
+              <span id="rant-date"></span>
+              <span id="rant-category"></span>
+              <span id="rant-anger" class="px-3 py-1 rounded text-xs font-bold"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="rant-content-text" class="text-text-secondary text-lg leading-relaxed mb-6"></div>
+
+        <div class="flex items-center gap-4 mb-6">
+          <button id="react-btn" class="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-smooth">
+            👊 共鸣 <span id="reactions-count" class="font-bold">0</span>
+          </button>
+        </div>
+
+        <div class="flex gap-4 border-t pt-6">
+          <a id="edit-link" href="#" class="px-6 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">编辑</a>
+          <button id="delete-btn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth">删除</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    // 格式化日期
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 加载并显示吐槽详情
+    async function loadRant(): Promise<void> {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const slug = decodeURIComponent(pathParts[pathParts.length - 1]);
+
+      const loading = document.getElementById('loading');
+      const notFound = document.getElementById('not-found');
+      const content = document.getElementById('rant-content');
+
+      if (!loading || !notFound || !content) return;
+
+      try {
+        const response = await fetch('/api/rants');
+        if (!response.ok) throw new Error('获取数据失败');
+        const allRants = await response.json();
+
+        const rant = allRants.find((r: any) => r.slug === slug);
+
+        loading.classList.add('hidden');
+
+        if (!rant) {
+          notFound.classList.remove('hidden');
+          return;
+        }
+
+        content.classList.remove('hidden');
+
+        // 根据愤怒等级设置样式
+        const angerLevel = rant.angerLevel || 5;
+        let bgColor = 'bg-yellow-50/50';
+        let emojiColor = 'bg-yellow-200';
+        let emoji = '😐';
+        let angerBg = 'bg-yellow-100 text-yellow-600';
+
+        if (angerLevel >= 8) {
+          bgColor = 'bg-red-50/50';
+          emojiColor = 'bg-red-200';
+          emoji = '🤬';
+          angerBg = 'bg-red-100 text-red-600';
+        } else if (angerLevel >= 5) {
+          bgColor = 'bg-orange-50/50';
+          emojiColor = 'bg-orange-200';
+          emoji = '😤';
+          angerBg = 'bg-orange-100 text-orange-600';
+        }
+
+        const card = document.getElementById('rant-card')!;
+        card.className = `glass-effect rounded-2xl p-8 ${bgColor}`;
+
+        const emojiDiv = document.getElementById('rant-emoji')!;
+        emojiDiv.className = `w-16 h-16 rounded-full flex items-center justify-center text-3xl flex-shrink-0 ${emojiColor}`;
+        emojiDiv.textContent = emoji;
+
+        (document.getElementById('rant-title')!).textContent = rant.title;
+        (document.getElementById('rant-content-text')!).textContent = rant.content;
+        (document.getElementById('rant-date')!).textContent = `📅 ${formatDate(rant.createdAt)}`;
+
+        if (rant.category) {
+          (document.getElementById('rant-category')!).textContent = `🏷️ ${rant.category}`;
+        }
+
+        const angerSpan = document.getElementById('rant-anger')!;
+        angerSpan.className = `px-3 py-1 rounded text-xs font-bold ${angerBg}`;
+        angerSpan.textContent = `愤怒指数: ${angerLevel}/10`;
+
+        (document.getElementById('reactions-count')!).textContent = (rant.reactions || 0).toString();
+
+        // 共鸣按钮
+        document.getElementById('react-btn')!.addEventListener('click', async () => {
+          const currentReactions = rant.reactions || 0;
+          try {
+            const updateResponse = await fetch(`/api/rants/${rant.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reactions: currentReactions + 1 })
+            });
+            if (!updateResponse.ok) throw new Error('更新失败');
+            (document.getElementById('reactions-count')!)!.textContent = (currentReactions + 1).toString();
+          } catch (error: any) {
+            alert('更新失败：' + error.message);
+          }
+        });
+
+        (document.getElementById('edit-link')!)!.setAttribute('href', `/rants/${slug}/edit`);
+        (document.getElementById('delete-btn')!)!.addEventListener('click', async () => {
+          if (confirm('确定要删除这个吐槽吗？')) {
+            try {
+              const deleteResponse = await fetch(`/api/rants/${rant.id}`, { method: 'DELETE' });
+              if (!deleteResponse.ok) throw new Error('删除失败');
+              alert('已删除');
+              window.location.href = '/rants';
+            } catch (error: any) {
+              alert('删除失败：' + error.message);
+            }
+          }
+        });
+      } catch (error: any) {
+        if (loading) {
+          loading.innerHTML = `<p class="text-red-500">加载失败：${error.message}</p>`;
+        }
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRant();
+    });
+  </script>
+</Layout>

@@ -1,0 +1,109 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="添加代码项目 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">💻 添加代码项目</h1>
+      <p class="text-text-muted">记录你的编程作品</p>
+    </section>
+
+    <form id="project-form" class="glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">项目名称 *</label>
+        <input type="text" id="title" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="例如: AI 写作助手" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">项目描述 *</label>
+        <textarea id="description" rows="3" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="简要描述你的项目..."></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">封面 Emoji *</label>
+          <input type="text" id="cover-emoji" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="🚀" maxlength="2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">状态 *</label>
+          <select id="status" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300">
+            <option value="Stable">Stable (稳定版)</option>
+            <option value="Beta">Beta (测试版)</option>
+            <option value="WIP">WIP (开发中)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">技术栈（用逗号分隔）*</label>
+        <input type="text" id="technologies" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="例如: React, Node.js, Tailwind" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">GitHub 链接</label>
+          <input type="url" id="github-url" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="https://github.com/..." />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Demo 链接</label>
+          <input type="url" id="demo-url" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="https://demo..." />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Stars ⭐</label>
+          <input type="number" id="stars" min="0" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Forks 🔱</label>
+          <input type="number" id="forks" min="0" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          添加项目
+        </button>
+        <a href="/projects" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../scripts/content-manager.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('project-form') as HTMLFormElement;
+
+      form.addEventListener('submit', (e: Event) => {
+        e.preventDefault();
+
+        const technologies = (document.getElementById('technologies') as HTMLInputElement).value
+          .split(',').map((t: string) => t.trim()).filter(Boolean);
+
+        const data = {
+          title: (document.getElementById('title') as HTMLInputElement).value,
+          description: (document.getElementById('description') as HTMLTextAreaElement).value,
+          coverEmoji: (document.getElementById('cover-emoji') as HTMLInputElement).value,
+          status: (document.getElementById('status') as HTMLSelectElement).value,
+          technologies: technologies,
+          githubUrl: (document.getElementById('github-url') as HTMLInputElement).value,
+          demoUrl: (document.getElementById('demo-url') as HTMLInputElement).value,
+          stars: parseInt((document.getElementById('stars') as HTMLInputElement).value) || 0,
+          forks: parseInt((document.getElementById('forks') as HTMLInputElement).value) || 0
+        };
+
+        try {
+          window.projectsManager.createItem(data);
+          alert('项目已添加！');
+          window.location.href = '/projects';
+        } catch (error: any) {
+          alert('添加失败：' + error.message);
+        }
+      });
+    });
+  </script>
+</Layout>

@@ -1,0 +1,103 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+
+<Layout title="编辑哲学思考 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">✏️ 编辑哲学思考</h1>
+      <p class="text-text-muted">修改思考内容</p>
+    </section>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <form id="thought-form" class="hidden glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">引用名言</label>
+        <textarea id="quote" rows="3" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">作者</label>
+        <input type="text" id="author" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">分类</label>
+        <input type="text" id="category" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">思考内容</label>
+        <textarea id="content" rows="6" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">标签（用逗号分隔）</label>
+        <input type="text" id="tags" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          保存修改
+        </button>
+        <a href="/philosophy" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../../scripts/content-manager.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+
+        console.log('正在编辑 slug:', slug);
+        const thought = window.philosophyManager.getItem(slug);
+        console.log('找到的思考:', thought);
+
+        const loading = document.getElementById('loading')!;
+        const form = document.getElementById('thought-form') as HTMLFormElement;
+
+        if (!thought) {
+          alert('未找到该思考');
+          window.location.href = '/philosophy';
+          return;
+        }
+
+        loading.classList.add('hidden');
+        form.classList.remove('hidden');
+
+        (document.getElementById('quote') as HTMLTextAreaElement).value = thought.quote || '';
+        (document.getElementById('author') as HTMLInputElement).value = thought.author || '';
+        (document.getElementById('category') as HTMLInputElement).value = thought.category || '';
+        (document.getElementById('content') as HTMLTextAreaElement).value = thought.content || '';
+        (document.getElementById('tags') as HTMLInputElement).value = thought.tags?.join(', ') || '';
+
+        form.addEventListener('submit', (e: Event) => {
+          e.preventDefault();
+
+          const updates = {
+            quote: (document.getElementById('quote') as HTMLTextAreaElement).value,
+            author: (document.getElementById('author') as HTMLInputElement).value,
+            category: (document.getElementById('category') as HTMLInputElement).value,
+            content: (document.getElementById('content') as HTMLTextAreaElement).value,
+            tags: (document.getElementById('tags') as HTMLInputElement).value.split(',').map((t: string) => t.trim()).filter(Boolean)
+          };
+
+          try {
+            window.philosophyManager.updateItem(thought.id, updates);
+            alert('修改已保存！');
+            window.location.href = '/philosophy';
+          } catch (error: any) {
+            alert('保存失败：' + error.message);
+          }
+        });
+      }, 100);
+    });
+  </script>
+</Layout>

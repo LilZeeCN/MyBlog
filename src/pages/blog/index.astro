@@ -1,0 +1,364 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="博客 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12">
+    <!-- 页面标题 -->
+    <section class="text-center mb-12">
+      <div class="text-6xl mb-4 animate-float">📝</div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">我的博客</h1>
+      <p class="text-xl text-text-secondary">生活、思考、学习与项目的记录</p>
+    </section>
+
+    <!-- 操作栏 -->
+    <div class="flex justify-between items-center mb-8 max-w-4xl mx-auto">
+      <!-- 搜索框 -->
+      <div class="relative flex-1 mr-4">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="搜索内容..."
+          class="w-full px-4 py-2 pl-10 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"
+        />
+        <svg class="w-5 h-5 absolute left-3 top-2.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+
+      <!-- 快速添加按钮 -->
+      <div class="flex gap-2">
+        <a href="/life/new" class="px-4 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-smooth text-sm" title="生活">
+          🌱 生活
+        </a>
+        <a href="/philosophy/new" class="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-smooth text-sm" title="哲学">
+          🧠 哲学
+        </a>
+        <a href="/rants/new" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-smooth text-sm" title="吐槽">
+          💢 吐槽
+        </a>
+        <a href="/learning/new" class="px-4 py-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition-smooth text-sm" title="学习">
+          📚 学习
+        </a>
+        <a href="/projects/new" class="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-smooth text-sm" title="项目">
+          💻 项目
+        </a>
+      </div>
+    </div>
+
+    <!-- 类型筛选 -->
+    <div class="flex flex-wrap gap-2 mb-8 justify-center">
+      <button class="type-filter active px-4 py-2 rounded-full text-sm transition-smooth" data-type="all">
+        全部
+      </button>
+      <button class="type-filter px-4 py-2 rounded-full text-sm transition-smooth" data-type="life">
+        🌱 生活
+      </button>
+      <button class="type-filter px-4 py-2 rounded-full text-sm transition-smooth" data-type="philosophy">
+        🧠 哲学
+      </button>
+      <button class="type-filter px-4 py-2 rounded-full text-sm transition-smooth" data-type="rants">
+        💢 吐槽
+      </button>
+      <button class="type-filter px-4 py-2 rounded-full text-sm transition-smooth" data-type="learning">
+        📚 学习
+      </button>
+      <button class="type-filter px-4 py-2 rounded-full text-sm transition-smooth" data-type="projects">
+        💻 项目
+      </button>
+    </div>
+
+    <!-- 内容列表 -->
+    <section id="content-container" class="max-w-4xl mx-auto space-y-8">
+      <!-- 加载状态 -->
+      <div id="loading" class="text-center py-12">
+        <div class="animate-pulse">正在加载内容...</div>
+      </div>
+
+      <!-- 空状态 -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <div class="text-6xl mb-4">📭</div>
+        <h2 class="text-2xl font-bold mb-4">还没有内容</h2>
+        <p class="text-text-muted mb-6">开始记录你的生活、思考和学习吧！</p>
+      </div>
+
+      <!-- 内容列表 -->
+      <div id="content-list" class="space-y-8">
+        <!-- 内容卡片将在这里动态生成 -->
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 格式化日期
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 获取类型图标
+    function getTypeIcon(type: string): string {
+      const icons: Record<string, string> = {
+        'life': '🌱',
+        'philosophy': '🧠',
+        'rants': '💢',
+        'learning': '📚',
+        'projects': '💻'
+      };
+      return icons[type] || '📝';
+    }
+
+    // 获取类型颜色
+    function getTypeColor(type: string): string {
+      const colors: Record<string, string> = {
+        'life': 'bg-green-100 text-green-600',
+        'philosophy': 'bg-purple-100 text-purple-600',
+        'rants': 'bg-red-100 text-red-600',
+        'learning': 'bg-yellow-100 text-yellow-600',
+        'projects': 'bg-blue-100 text-blue-600'
+      };
+      return colors[type] || 'bg-gray-100 text-gray-600';
+    }
+
+    // 获取详情页路径
+    function getDetailPath(item: any): string {
+      const paths: Record<string, string> = {
+        'life': '/life',
+        'philosophy': '/philosophy',
+        'rants': '/rants',
+        'learning': '/learning',
+        'projects': '/projects'
+      };
+      const basePath = paths[item.contentType] || '';
+      return `${basePath}/${item.slug}`;
+    }
+
+    // 渲染内容卡片
+    function renderContentCard(item: any): string {
+      const typeIcon = getTypeIcon(item.contentType);
+      const typeColor = getTypeColor(item.contentType);
+      const detailPath = getDetailPath(item);
+
+      // 根据不同类型渲染不同样式
+      if (item.contentType === 'life') {
+        return `
+          <article class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl">${typeIcon}</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-1 ${typeColor} rounded text-xs font-medium">${item.typeName}</span>
+                  <span class="text-sm text-text-muted">${formatDate(item.date || item.createdAt)}</span>
+                  ${item.mood ? `<span class="text-sm">${item.mood}</span>` : ''}
+                </div>
+                <h3 class="text-xl font-bold mb-2">
+                  <a href="${detailPath}" class="hover:text-primary-400 transition-colors">${item.title}</a>
+                </h3>
+                <p class="text-text-muted line-clamp-2">${item.content}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.contentType === 'philosophy') {
+        return `
+          <article class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl">${typeIcon}</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-1 ${typeColor} rounded text-xs font-medium">${item.typeName}</span>
+                  <span class="text-sm text-text-muted">${formatDate(item.createdAt)}</span>
+                </div>
+                <blockquote class="text-lg italic text-primary-400 mb-2">"${item.quote}"</blockquote>
+                <p class="text-sm text-text-muted">— ${item.author}</p>
+                <p class="text-text-muted mt-2 line-clamp-2">${item.content}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.contentType === 'rants') {
+        return `
+          <article class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl">${typeIcon}</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-1 ${typeColor} rounded text-xs font-medium">${item.typeName}</span>
+                  <span class="text-sm text-text-muted">${formatDate(item.createdAt)}</span>
+                  <span class="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">
+                    愤怒值: ${item.angerLevel}/10
+                  </span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">
+                  <a href="${detailPath}" class="hover:text-primary-400 transition-colors">${item.title}</a>
+                </h3>
+                <p class="text-text-muted line-clamp-2">${item.content}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.contentType === 'learning') {
+        return `
+          <article class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl">${typeIcon}</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-1 ${typeColor} rounded text-xs font-medium">${item.typeName}</span>
+                  <span class="text-sm text-text-muted">${formatDate(item.createdAt)}</span>
+                  <span class="px-2 py-1 rounded text-xs font-medium ${getStatusColor(item.status)}">${item.status}</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">
+                  <a href="${detailPath}" class="hover:text-primary-400 transition-colors">${item.title}</a>
+                </h3>
+                <p class="text-text-muted mb-2">${item.description || ''}</p>
+                <div class="flex items-center gap-4 text-sm">
+                  <span class="text-text-muted">进度: ${item.progress}%</span>
+                  <div class="flex-1 bg-gray-200 rounded-full h-2">
+                    <div class="bg-primary-400 h-2 rounded-full" style="width: ${item.progress}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.contentType === 'projects') {
+        return `
+          <article class="glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl">${item.coverEmoji || '💻'}</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-1 ${typeColor} rounded text-xs font-medium">${item.typeName}</span>
+                  <span class="text-sm text-text-muted">${formatDate(item.createdAt)}</span>
+                  <span class="px-2 py-1 rounded text-xs font-medium ${getProjectStatusColor(item.status)}">${item.status}</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">
+                  <a href="${detailPath}" class="hover:text-primary-400 transition-colors">${item.title}</a>
+                </h3>
+                <p class="text-text-muted mb-2">${item.description}</p>
+                ${item.technologies && item.technologies.length > 0 ? `
+                  <div class="flex flex-wrap gap-2">
+                    ${item.technologies.map((tech: string) => `<span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">${tech}</span>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      return '';
+    }
+
+    function getStatusColor(status: string): string {
+      const colors: Record<string, string> = {
+        '计划中': 'bg-gray-100 text-gray-600',
+        '进行中': 'bg-blue-100 text-blue-600',
+        '已完成': 'bg-green-100 text-green-600',
+        '暂停': 'bg-yellow-100 text-yellow-600'
+      };
+      return colors[status] || 'bg-gray-100 text-gray-600';
+    }
+
+    function getProjectStatusColor(status: string): string {
+      const colors: Record<string, string> = {
+        'Concept': 'bg-purple-100 text-purple-600',
+        'WIP': 'bg-blue-100 text-blue-600',
+        'Beta': 'bg-yellow-100 text-yellow-600',
+        'Stable': 'bg-green-100 text-green-600',
+        'Archived': 'bg-gray-100 text-gray-600'
+      };
+      return colors[status] || 'bg-gray-100 text-gray-600';
+    }
+
+    // 加载并显示内容
+    async function loadContent(type: string = 'all', searchQuery: string = ''): Promise<void> {
+      const loading = document.getElementById('loading');
+      const emptyState = document.getElementById('empty-state');
+      const contentList = document.getElementById('content-list');
+
+      if (!loading || !emptyState || !contentList) return;
+
+      try {
+        // 调用聚合 API
+        const params = new URLSearchParams();
+        if (type !== 'all') params.append('type', type);
+        if (searchQuery) params.append('search', searchQuery);
+
+        const response = await fetch(`/api/posts?${params}`);
+        const content = await response.json();
+
+        loading.classList.add('hidden');
+
+        if (!content || content.length === 0) {
+          contentList.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+          contentList.classList.remove('hidden');
+          contentList.innerHTML = content.map(renderContentCard).join('');
+        }
+      } catch (error: any) {
+        loading.innerHTML = `<p class="text-red-500">加载失败：${error.message}</p>`;
+      }
+    }
+
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载内容
+      loadContent();
+
+      // 类型筛选
+      document.querySelectorAll('.type-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // 更新按钮状态
+          document.querySelectorAll('.type-filter').forEach(b => {
+            b.classList.remove('active', 'bg-primary-300', 'text-white');
+            b.classList.add('bg-primary-50', 'text-text-muted');
+          });
+          btn.classList.add('active', 'bg-primary-300', 'text-white');
+          btn.classList.remove('bg-primary-50', 'text-text-muted');
+
+          // 加载对应类型的内容
+          const type = (btn as HTMLElement).dataset.type || 'all';
+          const searchInput = document.getElementById('search-input') as HTMLInputElement;
+          const searchQuery = searchInput?.value || '';
+          loadContent(type, searchQuery);
+        });
+      });
+
+      // 初始化激活状态
+      const activeBtn = document.querySelector('.type-filter.active');
+      if (activeBtn) {
+        activeBtn.classList.add('bg-primary-300', 'text-white');
+      }
+
+      // 搜索功能
+      const searchInput = document.getElementById('search-input') as HTMLInputElement;
+      let searchTimeout: ReturnType<typeof setTimeout>;
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            const query = searchInput.value.trim();
+            const activeType = (document.querySelector('.type-filter.active') as HTMLElement)?.dataset.type || 'all';
+            loadContent(activeType, query);
+          }, 300);
+        });
+      }
+    });
+  </script>
+</Layout>

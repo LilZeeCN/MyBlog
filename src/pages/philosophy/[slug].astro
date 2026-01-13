@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="哲学思考详情 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <a href="/philosophy" class="inline-flex items-center gap-2 text-text-muted hover:text-primary-400 transition-smooth mb-8">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      返回哲学思考
+    </a>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <div id="not-found" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold mb-4">未找到该思考</h2>
+      <a href="/philosophy" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">返回列表</a>
+    </div>
+
+    <article id="thought-content" class="hidden">
+      <div class="glass-effect rounded-2xl p-8">
+        <div class="flex items-center gap-4 mb-6">
+          <span class="text-4xl">💭</span>
+          <div>
+            <div id="thought-category" class="text-sm text-primary-400"></div>
+            <div id="thought-date" class="text-sm text-text-muted"></div>
+            <div id="thought-author" class="text-sm text-text-muted"></div>
+          </div>
+        </div>
+
+        <blockquote id="thought-quote" class="text-2xl font-serif font-bold text-primary-400 mb-6 leading-relaxed border-l-4 border-primary-300 pl-6"></blockquote>
+
+        <div id="thought-content-text" class="text-text-secondary text-lg leading-relaxed mb-6"></div>
+
+        <div id="thought-tags" class="flex flex-wrap gap-2 mb-6"></div>
+
+        <div class="flex gap-4 border-t pt-6">
+          <a id="edit-link" href="#" class="px-6 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">编辑</a>
+          <button id="delete-btn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth">删除</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    // 格式化日期
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 加载并显示思考详情
+    async function loadThought(): Promise<void> {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const slug = decodeURIComponent(pathParts[pathParts.length - 1]);
+
+      const loading = document.getElementById('loading');
+      const notFound = document.getElementById('not-found');
+      const content = document.getElementById('thought-content');
+
+      if (!loading || !notFound || !content) return;
+
+      try {
+        const response = await fetch('/api/philosophy');
+        if (!response.ok) throw new Error('获取数据失败');
+        const allThoughts = await response.json();
+
+        const thought = allThoughts.find((t: any) => t.slug === slug);
+
+        loading.classList.add('hidden');
+
+        if (!thought) {
+          notFound.classList.remove('hidden');
+          return;
+        }
+
+        content.classList.remove('hidden');
+
+        (document.getElementById('thought-quote')!)!.textContent = `"${thought.quote}"`;
+        (document.getElementById('thought-content-text')!).textContent = thought.content;
+        (document.getElementById('thought-date')!).textContent = formatDate(thought.createdAt);
+
+        if (thought.category) {
+          (document.getElementById('thought-category')!).textContent = thought.category;
+        }
+
+        if (thought.author) {
+          (document.getElementById('thought-author')!).textContent = `—— ${thought.author}`;
+        }
+
+        if (thought.tags?.length > 0) {
+          (document.getElementById('thought-tags')!).innerHTML = thought.tags.map((tag: string) =>
+            `<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">${tag}</span>`
+          ).join('');
+        }
+
+        (document.getElementById('edit-link')!)!.setAttribute('href', `/philosophy/${slug}/edit`);
+        (document.getElementById('delete-btn')!)!.addEventListener('click', async () => {
+          if (confirm('确定要删除这个思考吗？')) {
+            try {
+              const deleteResponse = await fetch(`/api/philosophy/${thought.id}`, { method: 'DELETE' });
+              if (!deleteResponse.ok) throw new Error('删除失败');
+              alert('已删除');
+              window.location.href = '/philosophy';
+            } catch (error: any) {
+              alert('删除失败：' + error.message);
+            }
+          }
+        });
+      } catch (error: any) {
+        if (loading) {
+          loading.innerHTML = `<p class="text-red-500">加载失败：${error.message}</p>`;
+        }
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadThought();
+    });
+  </script>
+</Layout>

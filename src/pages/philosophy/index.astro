@@ -1,0 +1,134 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="哲学思考 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12">
+    <!-- 页面标题 -->
+    <section class="text-center mb-12">
+      <div class="text-6xl mb-4 animate-float">🧠</div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 font-serif">哲学思考</h1>
+      <p class="text-xl text-text-secondary font-serif">深度思考与智慧分享</p>
+      <a href="/philosophy/new" class="inline-block mt-6 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+        📝 记录思考
+      </a>
+    </section>
+
+    <!-- 哲学思考列表 -->
+    <section id="thoughts-list" class="max-w-4xl mx-auto space-y-8">
+      <div class="text-center py-12">
+        <div class="animate-pulse">正在加载...</div>
+      </div>
+    </section>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">💭</div>
+      <p class="text-xl text-text-muted mb-6">还没有哲学思考，开始记录第一个吧</p>
+      <a href="/philosophy/new" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+        记录思考
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // 格式化日期
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 加载并显示思考
+    async function loadThoughts(): Promise<void> {
+      const container = document.getElementById('thoughts-list');
+      const emptyState = document.getElementById('empty-state');
+
+      if (!container || !emptyState) return;
+
+      try {
+        const response = await fetch('/api/philosophy');
+        if (!response.ok) throw new Error('获取数据失败');
+        const thoughts = await response.json();
+
+        container.innerHTML = '';
+
+        if (!thoughts || thoughts.length === 0) {
+          container.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        thoughts.forEach((thought: any, index: number) => {
+          const article = document.createElement('article');
+          article.className = 'glass-effect rounded-2xl p-8 shadow-md hover:shadow-lg transition-smooth animate-slide-up';
+          article.style.animationDelay = `${index * 0.1}s`;
+
+          article.innerHTML = `
+            <div class="flex items-center gap-4 mb-4">
+              <span class="text-4xl">💭</span>
+              <div>
+                <div class="text-sm text-primary-400">${thought.category || '思考'}</div>
+                <div class="text-sm text-text-muted">${formatDate(thought.createdAt)}</div>
+                ${thought.author ? `<div class="text-sm text-text-muted">—— ${thought.author}</div>` : ''}
+              </div>
+            </div>
+            <blockquote class="text-2xl font-serif font-bold text-primary-400 mb-6 leading-relaxed border-l-4 border-primary-300 pl-6">
+              "${thought.quote}"
+            </blockquote>
+            <p class="text-text-secondary leading-relaxed mb-4">
+              ${thought.content}
+            </p>
+            ${thought.tags?.length > 0 ? `
+              <div class="flex flex-wrap gap-2 mb-4">
+                ${thought.tags.map((tag: string) => `<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            <div class="flex gap-4 border-t pt-4">
+              <a href="/philosophy/${thought.slug}" class="text-primary-400 hover:text-primary-500 transition-smooth">查看详情</a>
+              <a href="/philosophy/${thought.slug}/edit" class="text-blue-500 hover:text-blue-600 transition-smooth">编辑</a>
+              <button class="delete-btn text-red-500 hover:text-red-600 transition-smooth" data-id="${thought.id}">删除</button>
+            </div>
+          `;
+
+          container.appendChild(article);
+        });
+
+        // 添加删除事件监听
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLElement).getAttribute('data-id')!;
+            if (confirm('确定要删除这个思考吗？')) {
+              try {
+                const response = await fetch(`/api/philosophy/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('删除失败');
+                loadThoughts();
+              } catch (error: any) {
+                alert('删除失败：' + error.message);
+              }
+            }
+          });
+        });
+      } catch (error: any) {
+        container.innerHTML = `<p class="text-red-500 text-center py-12">加载失败：${error.message}</p>`;
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadThoughts();
+    });
+  </script>
+
+  <style>
+    blockquote {
+      position: relative;
+    }
+  </style>
+</Layout>

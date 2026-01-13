@@ -1,0 +1,80 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="记录生活瞬间 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">🌱 记录生活瞬间</h1>
+      <p class="text-text-muted">记录下美好的生活时刻</p>
+    </section>
+
+    <form id="moment-form" class="glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">标题</label>
+        <input type="text" id="title" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="给这个瞬间起个名字..." />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">日期</label>
+        <input type="text" id="date" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="2024年1月" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">内容</label>
+        <textarea id="content" rows="6" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="描述这个美好的瞬间..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">心情</label>
+        <input type="text" id="mood" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="😊 开心" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">标签（用逗号分隔）</label>
+        <input type="text" id="tags" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="☀️ 晴天, 🎉 聚会" />
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          保存
+        </button>
+        <a href="/life" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../scripts/content-manager.js"></script>
+  <script>
+    const form = document.getElementById('moment-form') as HTMLFormElement;
+
+    form.addEventListener('submit', (e: Event) => {
+      e.preventDefault();
+
+      const title = (document.getElementById('title') as HTMLInputElement).value;
+      const date = (document.getElementById('date') as HTMLInputElement).value;
+      const content = (document.getElementById('content') as HTMLTextAreaElement).value;
+      const mood = (document.getElementById('mood') as HTMLInputElement).value;
+      const tagsInput = (document.getElementById('tags') as HTMLInputElement).value;
+      const tags = tagsInput ? tagsInput.split(',').map((t: string) => t.trim()) : [];
+
+      const momentData = {
+        title,
+        date,
+        content,
+        mood,
+        tags
+      };
+
+      try {
+        window.lifeManager.createItem(momentData);
+        alert('生活瞬间已保存！');
+        window.location.href = '/life';
+      } catch (error: any) {
+        alert('保存失败：' + error.message);
+      }
+    });
+  </script>
+</Layout>

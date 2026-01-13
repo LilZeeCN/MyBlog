@@ -1,0 +1,137 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+
+<Layout title="编辑学习项目 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">✏️ 编辑学习项目</h1>
+      <p class="text-text-muted">更新你的学习进展</p>
+    </section>
+
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <form id="learning-form" class="hidden glass-effect rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block text-sm font-medium mb-2">项目标题</label>
+        <input type="text" id="title" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">项目描述</label>
+        <textarea id="description" rows="3" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">状态</label>
+        <select id="status" required class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300">
+          <option value="进行中">进行中</option>
+          <option value="计划中">计划中</option>
+          <option value="已完成">已完成</option>
+          <option value="已暂停">已暂停</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">进度 (0-100%)</label>
+        <div class="flex items-center gap-4">
+          <input type="range" id="progress" min="0" max="100" value="0" required class="flex-1" />
+          <span id="progress-display" class="text-2xl font-bold w-16 text-center">0%</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">学习资源（每行一个链接）</label>
+        <textarea id="resources" rows="3" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">开始日期</label>
+          <input type="date" id="start-date" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">预计完成日期</label>
+          <input type="date" id="end-date" class="w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <button type="submit" class="flex-1 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+          保存修改
+        </button>
+        <a href="/learning" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth font-medium text-center">
+          取消
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="../../../scripts/content-manager.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+
+        console.log('正在编辑 slug:', slug);
+        const project = window.learningManager.getItem(slug);
+        console.log('找到的项目:', project);
+
+        const loading = document.getElementById('loading')!;
+        const form = document.getElementById('learning-form') as HTMLFormElement;
+        const progress = document.getElementById('progress') as HTMLInputElement;
+        const progressDisplay = document.getElementById('progress-display')!;
+
+        if (!project) {
+          alert('未找到该学习项目');
+          window.location.href = '/learning';
+          return;
+        }
+
+        loading.classList.add('hidden');
+        form.classList.remove('hidden');
+
+        (document.getElementById('title') as HTMLInputElement).value = project.title || '';
+        (document.getElementById('description') as HTMLTextAreaElement).value = project.description || '';
+        (document.getElementById('status') as HTMLSelectElement).value = project.status || '进行中';
+        progress.value = (project.progress || 0).toString();
+        progressDisplay.textContent = progress.value + '%';
+        (document.getElementById('resources') as HTMLTextAreaElement).value = project.resources?.join('\n') || '';
+        (document.getElementById('start-date') as HTMLInputElement).value = project.startDate || '';
+        (document.getElementById('end-date') as HTMLInputElement).value = project.endDate || '';
+
+        // 更新进度显示
+        progress.addEventListener('input', () => {
+          progressDisplay.textContent = progress.value + '%';
+        });
+
+        form.addEventListener('submit', (e: Event) => {
+          e.preventDefault();
+
+          const resourcesText = (document.getElementById('resources') as HTMLTextAreaElement).value;
+          const resources = resourcesText.split('\n').map((r: string) => r.trim()).filter(Boolean);
+
+          const updates = {
+            title: (document.getElementById('title') as HTMLInputElement).value,
+            description: (document.getElementById('description') as HTMLTextAreaElement).value,
+            status: (document.getElementById('status') as HTMLSelectElement).value,
+            progress: parseInt(progress.value),
+            resources: resources,
+            startDate: (document.getElementById('start-date') as HTMLInputElement).value,
+            endDate: (document.getElementById('end-date') as HTMLInputElement).value
+          };
+
+          try {
+            window.learningManager.updateItem(project.id, updates);
+            alert('修改已保存！');
+            window.location.href = '/learning';
+          } catch (error: any) {
+            alert('保存失败：' + error.message);
+          }
+        });
+      }, 100);
+    });
+  </script>
+</Layout>

@@ -1,0 +1,169 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="学习进展 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12">
+    <!-- 页面标题 -->
+    <section class="text-center mb-12">
+      <div class="text-6xl mb-4 animate-float">📚</div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">学习进展</h1>
+      <p class="text-xl text-text-secondary">持续学习，不断成长</p>
+      <a href="/learning/new" class="inline-block mt-6 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+        📚 添加学习项目
+      </a>
+    </section>
+
+    <!-- 学习进度卡片 -->
+    <section id="projects-list" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="text-center py-12 col-span-full">
+        <div class="animate-pulse">正在加载...</div>
+      </div>
+    </section>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">📚</div>
+      <p class="text-xl text-text-muted mb-6">还没有学习项目，开始添加第一个吧</p>
+      <a href="/learning/new" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+        添加学习项目
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // 加载并显示学习项目
+    async function loadProjects(): Promise<void> {
+      const container = document.getElementById('projects-list');
+      const emptyState = document.getElementById('empty-state');
+
+      if (!container || !emptyState) return;
+
+      try {
+        const response = await fetch('/api/learning');
+        if (!response.ok) throw new Error('获取数据失败');
+        const projects = await response.json();
+
+        container.innerHTML = '';
+
+        if (!projects || projects.length === 0) {
+          container.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        projects.forEach((project: any, index: number) => {
+          const status = project.status || '进行中';
+          const progress = project.progress || 0;
+
+          let statusClass = 'bg-green-100 text-green-600';
+          let progressGradient = 'from-primary-300 to-primary-400';
+          let opacity = '';
+
+          if (status === '已完成') {
+            statusClass = 'bg-functional-success text-white';
+            progressGradient = 'from-functional-success to-green-400';
+          } else if (status === '计划中') {
+            statusClass = 'bg-yellow-100 text-yellow-600';
+          } else if (status === '已暂停') {
+            statusClass = 'bg-gray-200 text-gray-600';
+            progressGradient = 'from-gray-300 to-gray-400';
+            opacity = 'opacity-70';
+          }
+
+          const card = document.createElement('div');
+          card.className = `glass-effect rounded-2xl p-6 shadow-md hover:shadow-lg transition-smooth animate-slide-up ${opacity}`;
+          card.style.animationDelay = `${index * 0.1}s`;
+
+          const resourcesHtml = project.resources?.length > 0 ? `
+            <div class="space-y-2 mb-4">
+              <div class="text-sm font-medium text-text-secondary">学习资源:</div>
+              ${project.resources.slice(0, 2).map((resource: string) => `
+                <a href="${resource}" target="_blank" class="flex items-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-smooth truncate">
+                  <span>🔗</span>
+                  <span class="truncate">${resource}</span>
+                </a>
+              `).join('')}
+              ${project.resources.length > 2 ? `<div class="text-xs text-text-muted">+${project.resources.length - 2} 更多</div>` : ''}
+            </div>
+          ` : '';
+
+          const dateInfo = [];
+          if (project.startDate) {
+            dateInfo.push(`开始: ${project.startDate}`);
+          }
+          if (project.endDate) {
+            dateInfo.push(`${status === '已完成' ? '完成' : '预计'}: ${project.endDate}`);
+          }
+          const dateHtml = dateInfo.length > 0 ? `<div class="text-xs text-text-muted mb-4">${dateInfo.join(' | ')}</div>` : '';
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-4xl">📖</span>
+              <span class="px-3 py-1 ${statusClass} rounded-full text-sm font-medium">${status}</span>
+            </div>
+            <a href="/learning/${project.slug}" class="text-xl font-bold mb-2 hover:text-primary-400 transition-smooth block">${project.title}</a>
+            <p class="text-text-muted text-sm mb-4 line-clamp-2">${project.description}</p>
+
+            <!-- 进度条 -->
+            <div class="mb-4">
+              <div class="flex justify-between text-sm mb-1">
+                <span>进度</span>
+                <span class="font-bold">${progress}%</span>
+              </div>
+              <div class="h-3 bg-primary-100 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r ${progressGradient} rounded-full animate-fade-in" style="width: ${progress}%"></div>
+              </div>
+            </div>
+
+            ${resourcesHtml}
+            ${dateHtml}
+
+            <div class="flex gap-3 border-t pt-4">
+              <a href="/learning/${project.slug}" class="text-primary-400 hover:text-primary-500 transition-smooth text-sm">查看详情</a>
+              <a href="/learning/${project.slug}/edit" class="text-blue-500 hover:text-blue-600 transition-smooth text-sm">编辑</a>
+              <button class="delete-btn text-red-500 hover:text-red-600 transition-smooth text-sm" data-id="${project.id}">删除</button>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        // 添加删除事件监听
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLElement).getAttribute('data-id')!;
+            if (confirm('确定要删除这个学习项目吗？')) {
+              try {
+                const response = await fetch(`/api/learning/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('删除失败');
+                loadProjects();
+              } catch (error: any) {
+                alert('删除失败：' + error.message);
+              }
+            }
+          });
+        });
+      } catch (error: any) {
+        container.innerHTML = `<p class="text-red-500 text-center py-12 col-span-full">加载失败：${error.message}</p>`;
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProjects();
+    });
+  </script>
+
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</Layout>
