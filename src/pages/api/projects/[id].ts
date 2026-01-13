@@ -1,44 +1,35 @@
 import type { APIRoute } from 'astro';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '../../../../lib/supabase';
 
 export const prerender = false;
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const STORAGE_KEY = 'warm_blog_code_projects';
-
-function getAll(): any[] {
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateData(items: any[]): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
-}
-
 export const GET: APIRoute = async ({ params }) => {
   const { id } = params;
-  const items = getAll();
-  const item = items.find((i: any) => i.id === id);
 
-  if (!item) {
+  const { data, error } = await supabase
+    .from('code_projects')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
     return new Response(JSON.stringify({ error: '内容不存在' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  return new Response(JSON.stringify(item), {
+  const response = {
+    ...data,
+    coverEmoji: data.cover_emoji,
+    technologies: data.technologies || [],
+    githubUrl: data.github_url,
+    demoUrl: data.demo_url,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+
+  return new Response(JSON.stringify(response), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
@@ -46,17 +37,18 @@ export const GET: APIRoute = async ({ params }) => {
 
 export const DELETE: APIRoute = async ({ params }) => {
   const { id } = params;
-  const items = getAll();
-  const filtered = items.filter((i: any) => i.id !== id);
 
-  if (filtered.length === items.length) {
+  const { error } = await supabase
+    .from('code_projects')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
     return new Response(JSON.stringify({ error: '内容不存在' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  updateData(filtered);
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
@@ -67,27 +59,43 @@ export const DELETE: APIRoute = async ({ params }) => {
 export const PUT: APIRoute = async ({ params, request }) => {
   const { id } = params;
   const body = await request.json();
-  const items = getAll();
-  const index = items.findIndex((i: any) => i.id === id);
 
-  if (index === -1) {
+  const { data: updated, error } = await supabase
+    .from('code_projects')
+    .update({
+      title: body.title,
+      description: body.description,
+      cover_emoji: body.coverEmoji,
+      status: body.status,
+      technologies: body.technologies,
+      github_url: body.githubUrl,
+      demo_url: body.demoUrl,
+      stars: body.stars,
+      forks: body.forks,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error || !updated) {
     return new Response(JSON.stringify({ error: '内容不存在' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  const updated = {
-    ...items[index],
-    ...body,
-    id,
-    updatedAt: new Date().toISOString(),
+  const response = {
+    ...updated,
+    coverEmoji: updated.cover_emoji,
+    technologies: updated.technologies || [],
+    githubUrl: updated.github_url,
+    demoUrl: updated.demo_url,
+    createdAt: updated.created_at,
+    updatedAt: updated.updated_at
   };
 
-  items[index] = updated;
-  updateData(items);
-
-  return new Response(JSON.stringify({ success: true, data: updated }), {
+  return new Response(JSON.stringify({ success: true, data: response }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });

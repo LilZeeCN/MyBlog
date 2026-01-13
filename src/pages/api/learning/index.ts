@@ -1,57 +1,42 @@
 import type { APIRoute } from 'astro';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const STORAGE_KEY = 'warm_blog_learning_projects';
-
-function getAll(): any[] {
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateData(items: any[]): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
-}
-
-function filterBySearch(items: any[], query: string): any[] {
-  const lowerQuery = query.toLowerCase();
-  return items.filter((item: any) =>
-    item.title?.toLowerCase().includes(lowerQuery) ||
-    item.description?.toLowerCase().includes(lowerQuery)
-  );
-}
-
-// GET all learning projects
 export const GET: APIRoute = async ({ url }) => {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get('search');
   const status = searchParams.get('status');
 
-  let projects = getAll();
+  let query = supabase
+    .from('learning_projects')
+    .select('*')
+    .order('progress', { ascending: false });
 
   if (search) {
-    projects = filterBySearch(projects, search);
+    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
   }
 
   if (status) {
-    projects = projects.filter((p: any) => p.status === status);
+    query = query.eq('status', status);
   }
 
-  // 按进度排序
-  projects.sort((a: any, b: any) => b.progress - a.progress);
+  const { data, error } = await query;
+
+  if (error) {
+    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const projects = data?.map(item => ({
+    ...item,
+    startDate: item.start_date,
+    endDate: item.end_date,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  })) || [];
 
   return new Response(JSON.stringify(projects), {
     status: 200,
@@ -59,7 +44,6 @@ export const GET: APIRoute = async ({ url }) => {
   });
 };
 
-// POST create learning project
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -72,29 +56,45 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const newItem = {
-      title,
-      description,
-      status: status || '计划中',
-      progress: progress || 0,
-      startDate: startDate || null,
-      endDate: endDate || null,
-      resources: resources || [],
-      slug: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const slug = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const id = crypto.randomUUID();
+
+    const { data: newItem, error } = await supabase
+      .from('learning_projects')
+      .insert({
+        id,
+        title,
+        description,
+        status: status || '计划中',
+        progress: progress || 0,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        resources: resources || [],
+        slug,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: '创建失败' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const response = {
+      ...newItem,
+      startDate: newItem.start_date,
+      endDate: newItem.end_date,
+      createdAt: newItem.created_at,
+      updatedAt: newItem.updated_at
     };
 
-    const items = getAll();
-    items.push(newItem);
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: newItem }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '创建失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -102,7 +102,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// PUT update learning project
 export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -115,36 +114,42 @@ export const PUT: APIRoute = async ({ request }) => {
       });
     }
 
-    const items = getAll();
-    const index = items.findIndex((i: any) => i.id === id);
+    const { data: updated, error } = await supabase
+      .from('learning_projects')
+      .update({
+        title,
+        description,
+        status,
+        progress,
+        start_date: startDate,
+        end_date: endDate,
+        resources,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (index === -1) {
+    if (error || !updated) {
       return new Response(JSON.stringify({ error: '内容不存在' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const updated = {
-      ...items[index],
-      title,
-      description,
-      status,
-      progress,
-      startDate,
-      endDate,
-      resources,
-      updatedAt: new Date().toISOString(),
+    const response = {
+      ...updated,
+      startDate: updated.start_date,
+      endDate: updated.end_date,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at
     };
 
-    items[index] = updated;
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: updated }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '更新失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

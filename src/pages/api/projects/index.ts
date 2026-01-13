@@ -1,58 +1,44 @@
 import type { APIRoute } from 'astro';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const STORAGE_KEY = 'warm_blog_code_projects';
-
-function getAll(): any[] {
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateData(items: any[]): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
-}
-
-function filterBySearch(items: any[], query: string): any[] {
-  const lowerQuery = query.toLowerCase();
-  return items.filter((item: any) =>
-    item.title?.toLowerCase().includes(lowerQuery) ||
-    item.description?.toLowerCase().includes(lowerQuery) ||
-    item.technologies?.some((tech: string) => tech.toLowerCase().includes(lowerQuery))
-  );
-}
-
-// GET all code projects
 export const GET: APIRoute = async ({ url }) => {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get('search');
   const status = searchParams.get('status');
 
-  let projects = getAll();
+  let query = supabase
+    .from('code_projects')
+    .select('*')
+    .order('stars', { ascending: false });
 
   if (search) {
-    projects = filterBySearch(projects, search);
+    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
   }
 
   if (status) {
-    projects = projects.filter((p: any) => p.status === status);
+    query = query.eq('status', status);
   }
 
-  // 按 stars 排序
-  projects.sort((a: any, b: any) => b.stars - a.stars);
+  const { data, error } = await query;
+
+  if (error) {
+    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const projects = data?.map(item => ({
+    ...item,
+    coverEmoji: item.cover_emoji,
+    technologies: item.technologies || [],
+    githubUrl: item.github_url,
+    demoUrl: item.demo_url,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  })) || [];
 
   return new Response(JSON.stringify(projects), {
     status: 200,
@@ -60,11 +46,10 @@ export const GET: APIRoute = async ({ url }) => {
   });
 };
 
-// POST create code project
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { title, description, coverEmoji, status, technologies, githubUrl, demoUrl } = body;
+    const { title, description, coverEmoji, status, technologies, githubUrl, demoUrl, stars, forks } = body;
 
     if (!title || !description) {
       return new Response(JSON.stringify({ error: '标题和描述不能为空' }), {
@@ -73,31 +58,49 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const newItem = {
-      title,
-      description,
-      coverEmoji: coverEmoji || '💻',
-      status: status || 'WIP',
-      technologies: technologies || [],
-      githubUrl: githubUrl || null,
-      demoUrl: demoUrl || null,
-      stars: 0,
-      forks: 0,
-      slug: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const slug = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const id = crypto.randomUUID();
+
+    const { data: newItem, error } = await supabase
+      .from('code_projects')
+      .insert({
+        id,
+        title,
+        description,
+        cover_emoji: coverEmoji || '💻',
+        status: status || 'WIP',
+        technologies: technologies || [],
+        github_url: githubUrl || null,
+        demo_url: demoUrl || null,
+        stars: stars || 0,
+        forks: forks || 0,
+        slug,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: '创建失败' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const response = {
+      ...newItem,
+      coverEmoji: newItem.cover_emoji,
+      technologies: newItem.technologies || [],
+      githubUrl: newItem.github_url,
+      demoUrl: newItem.demo_url,
+      createdAt: newItem.created_at,
+      updatedAt: newItem.updated_at
     };
 
-    const items = getAll();
-    items.push(newItem);
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: newItem }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '创建失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -105,7 +108,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// PUT update code project
 export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -118,38 +120,46 @@ export const PUT: APIRoute = async ({ request }) => {
       });
     }
 
-    const items = getAll();
-    const index = items.findIndex((i: any) => i.id === id);
+    const { data: updated, error } = await supabase
+      .from('code_projects')
+      .update({
+        title,
+        description,
+        cover_emoji: coverEmoji,
+        status,
+        technologies,
+        github_url: githubUrl,
+        demo_url: demoUrl,
+        stars,
+        forks,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (index === -1) {
+    if (error || !updated) {
       return new Response(JSON.stringify({ error: '内容不存在' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const updated = {
-      ...items[index],
-      title,
-      description,
-      coverEmoji,
-      status,
-      technologies,
-      githubUrl,
-      demoUrl,
-      stars,
-      forks,
-      updatedAt: new Date().toISOString(),
+    const response = {
+      ...updated,
+      coverEmoji: updated.cover_emoji,
+      technologies: updated.technologies || [],
+      githubUrl: updated.github_url,
+      demoUrl: updated.demo_url,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at
     };
 
-    items[index] = updated;
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: updated }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '更新失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
