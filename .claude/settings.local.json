@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Edit(*)",                                                              
+      "Edit(*)",
       "Write(*)",
       "Bash(pnpm create astro:*)",
       "Bash(npm create:*)",
@@ -12,7 +12,9 @@
       "Bash(find:*)",
       "Bash(tree:*)",
       "Bash(curl:*)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
