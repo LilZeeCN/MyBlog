@@ -25,7 +25,7 @@ function getAll(key: string): any[] {
   }
 }
 
-function search(items: any[], query: string): any[] {
+function filterBySearch(items: any[], query: string): any[] {
   const lowerQuery = query.toLowerCase();
   return items.filter((item: any) =>
     item.title?.toLowerCase().includes(lowerQuery) ||
@@ -59,7 +59,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // 搜索
   if (searchQuery) {
-    allContent = search(allContent, searchQuery);
+    allContent = filterBySearch(allContent, searchQuery);
   }
 
   // 按创建时间倒序排序

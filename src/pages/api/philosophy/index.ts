@@ -26,7 +26,7 @@ function updateData(items: any[]): void {
   fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
 }
 
-function search(items: any[], query: string): any[] {
+function filterBySearch(items: any[], query: string): any[] {
   const lowerQuery = query.toLowerCase();
   return items.filter((item: any) =>
     item.quote?.toLowerCase().includes(lowerQuery) ||
@@ -45,7 +45,7 @@ export const GET: APIRoute = async ({ url }) => {
   let thoughts = getAll();
 
   if (search) {
-    thoughts = search(thoughts, search);
+    thoughts = filterBySearch(thoughts, search);
   }
 
   if (category) {
