@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '@/lib/supabase.js';
+import { verifySession } from '@/lib/auth.js';
 
 export const prerender = false;
 
@@ -41,6 +42,15 @@ export const GET: APIRoute = async ({ url }) => {
 
 // POST create life moment
 export const POST: APIRoute = async ({ request }) => {
+  // 验证身份
+  const authResult = await verifySession(request);
+  if (!authResult.authenticated) {
+    return new Response(JSON.stringify({ error: '未授权' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const body = await request.json();
     const { title, content, date, mood, tags } = body;
@@ -97,6 +107,15 @@ export const POST: APIRoute = async ({ request }) => {
 
 // PUT update life moment
 export const PUT: APIRoute = async ({ request }) => {
+  // 验证身份
+  const authResult = await verifySession(request);
+  if (!authResult.authenticated) {
+    return new Response(JSON.stringify({ error: '未授权' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const body = await request.json();
     const { id, title, content, date, mood, tags } = body;

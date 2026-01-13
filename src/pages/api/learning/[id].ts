@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '@/lib/supabase.js';
+import { verifySession } from '@/lib/auth.js';
 
 export const prerender = false;
 
@@ -33,7 +34,16 @@ export const GET: APIRoute = async ({ params }) => {
   });
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
+  // 验证身份
+  const authResult = await verifySession(request);
+  if (!authResult.authenticated) {
+    return new Response(JSON.stringify({ error: '未授权' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   const { id } = params;
 
   const { error } = await supabase
@@ -55,6 +65,15 @@ export const DELETE: APIRoute = async ({ params }) => {
 };
 
 export const PUT: APIRoute = async ({ params, request }) => {
+  // 验证身份
+  const authResult = await verifySession(request);
+  if (!authResult.authenticated) {
+    return new Response(JSON.stringify({ error: '未授权' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   const { id } = params;
   const body = await request.json();
 

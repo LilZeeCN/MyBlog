@@ -38,6 +38,11 @@ const {
               <li><a href="/rants" class="hover:text-primary-300 transition-smooth">吐槽</a></li>
               <li><a href="/learning" class="hover:text-primary-300 transition-smooth">学习</a></li>
               <li><a href="/projects" class="hover:text-primary-300 transition-smooth">项目</a></li>
+              <!-- 登录/登出按钮 -->
+              <li id="auth-section-desktop">
+                <a href="/login" id="login-link-desktop" class="hidden px-4 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth text-sm">登录</a>
+                <button id="logout-btn-desktop" class="hidden px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth text-sm">退出</button>
+              </li>
             </ul>
             <button id="mobile-menu-btn" class="md:hidden p-2">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,6 +60,11 @@ const {
               <li><a href="/rants" class="block hover:text-primary-300 transition-smooth">吐槽</a></li>
               <li><a href="/learning" class="block hover:text-primary-300 transition-smooth">学习</a></li>
               <li><a href="/projects" class="block hover:text-primary-300 transition-smooth">项目</a></li>
+              <!-- 登录/登出按钮 -->
+              <li id="auth-section-mobile" class="border-t border-primary-200 pt-4 mt-2">
+                <a href="/login" id="login-link-mobile" class="hidden block text-center px-4 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">登录</a>
+                <button id="logout-btn-mobile" class="hidden w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-smooth">退出</button>
+              </li>
             </ul>
           </div>
         </nav>
@@ -82,6 +92,57 @@ const {
       menuBtn?.addEventListener('click', () => {
         mobileMenu?.classList.toggle('hidden');
       });
+
+      // 检查登录状态并更新UI
+      async function updateAuthUI() {
+        try {
+          const response = await fetch('/api/auth/check');
+          const data = await response.json();
+
+          // 桌面端按钮
+          const loginLinkDesktop = document.getElementById('login-link-desktop');
+          const logoutBtnDesktop = document.getElementById('logout-btn-desktop');
+          // 移动端按钮
+          const loginLinkMobile = document.getElementById('login-link-mobile');
+          const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+
+          if (data.authenticated) {
+            // 已登录：显示退出按钮
+            loginLinkDesktop?.classList.add('hidden');
+            logoutBtnDesktop?.classList.remove('hidden');
+            loginLinkMobile?.classList.add('hidden');
+            logoutBtnMobile?.classList.remove('hidden');
+          } else {
+            // 未登录：显示登录按钮
+            loginLinkDesktop?.classList.remove('hidden');
+            logoutBtnDesktop?.classList.add('hidden');
+            loginLinkMobile?.classList.remove('hidden');
+            logoutBtnMobile?.classList.add('hidden');
+          }
+        } catch (error) {
+          // 出错时默认显示登录按钮
+          console.error('Failed to check auth status:', error);
+        }
+      }
+
+      // 登出功能
+      async function handleLogout() {
+        try {
+          const response = await fetch('/api/auth/logout', { method: 'POST' });
+          if (response.ok) {
+            window.location.reload();
+          }
+        } catch (error) {
+          alert('登出失败，请重试');
+        }
+      }
+
+      // 绑定登出按钮
+      document.getElementById('logout-btn-desktop')?.addEventListener('click', handleLogout);
+      document.getElementById('logout-btn-mobile')?.addEventListener('click', handleLogout);
+
+      // 页面加载时检查登录状态
+      updateAuthUI();
     </script>
   </body>
 </html>
