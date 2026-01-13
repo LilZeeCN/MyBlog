@@ -1,58 +1,41 @@
 import type { APIRoute } from 'astro';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const STORAGE_KEY = 'warm_blog_rants';
-
-function getAll(): any[] {
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateData(items: any[]): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  const filePath = path.join(DATA_DIR, `${STORAGE_KEY}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf-8');
-}
-
-function filterBySearch(items: any[], query: string): any[] {
-  const lowerQuery = query.toLowerCase();
-  return items.filter((item: any) =>
-    item.title?.toLowerCase().includes(lowerQuery) ||
-    item.content?.toLowerCase().includes(lowerQuery) ||
-    item.category?.toLowerCase().includes(lowerQuery)
-  );
-}
-
-// GET all rants
 export const GET: APIRoute = async ({ url }) => {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get('search');
   const category = searchParams.get('category');
 
-  let rants = getAll();
+  let query = supabase
+    .from('rants')
+    .select('*')
+    .order('anger_level', { ascending: false });
 
   if (search) {
-    rants = filterBySearch(rants, search);
+    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,category.ilike.%${search}%`);
   }
 
   if (category) {
-    rants = rants.filter((r: any) => r.category === category);
+    query = query.eq('category', category);
   }
 
-  // 按愤怒等级排序
-  rants.sort((a: any, b: any) => b.angerLevel - a.angerLevel);
+  const { data, error } = await query;
+
+  if (error) {
+    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const rants = data?.map(item => ({
+    ...item,
+    angerLevel: item.anger_level,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  })) || [];
 
   return new Response(JSON.stringify(rants), {
     status: 200,
@@ -60,7 +43,6 @@ export const GET: APIRoute = async ({ url }) => {
   });
 };
 
-// POST create rant
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -73,27 +55,42 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const newItem = {
-      title,
-      content,
-      angerLevel: angerLevel || 5,
-      category: category || '其他',
-      reactions: 0,
-      slug: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const slug = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const id = crypto.randomUUID();
+
+    const { data: newItem, error } = await supabase
+      .from('rants')
+      .insert({
+        id,
+        title,
+        content,
+        anger_level: angerLevel || 5,
+        category: category || '',
+        reactions: 0,
+        slug,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: '创建失败' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const response = {
+      ...newItem,
+      angerLevel: newItem.anger_level,
+      createdAt: newItem.created_at,
+      updatedAt: newItem.updated_at
     };
 
-    const items = getAll();
-    items.push(newItem);
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: newItem }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '创建失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -101,11 +98,10 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// PUT update rant
 export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { id, title, content, angerLevel, category, reactions } = body;
+    const { id, title, content, angerLevel, category } = body;
 
     if (!id) {
       return new Response(JSON.stringify({ error: '缺少 id' }), {
@@ -114,34 +110,38 @@ export const PUT: APIRoute = async ({ request }) => {
       });
     }
 
-    const items = getAll();
-    const index = items.findIndex((i: any) => i.id === id);
+    const { data: updated, error } = await supabase
+      .from('rants')
+      .update({
+        title,
+        content,
+        anger_level: angerLevel,
+        category,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (index === -1) {
+    if (error || !updated) {
       return new Response(JSON.stringify({ error: '内容不存在' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const updated = {
-      ...items[index],
-      title,
-      content,
-      angerLevel,
-      category,
-      reactions,
-      updatedAt: new Date().toISOString(),
+    const response = {
+      ...updated,
+      angerLevel: updated.anger_level,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at
     };
 
-    items[index] = updated;
-    updateData(items);
-
-    return new Response(JSON.stringify({ success: true, data: updated }), {
+    return new Response(JSON.stringify({ success: true, data: response }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: '更新失败' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
