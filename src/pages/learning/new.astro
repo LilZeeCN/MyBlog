@@ -66,42 +66,44 @@ https://example.com/resource2"></textarea>
     </form>
   </div>
 
-  <script src="../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('learning-form') as HTMLFormElement;
-      const progress = document.getElementById('progress') as HTMLInputElement;
-      const progressDisplay = document.getElementById('progress-display')!;
+    const form = document.getElementById('learning-form');
+    const progress = document.getElementById('progress');
+    const progressDisplay = document.getElementById('progress-display');
 
-      // 更新进度显示
-      progress.addEventListener('input', () => {
-        progressDisplay.textContent = progress.value + '%';
-      });
+    // 更新进度显示
+    progress.addEventListener('input', () => {
+      progressDisplay.textContent = progress.value + '%';
+    });
 
-      form.addEventListener('submit', (e: Event) => {
-        e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        const resourcesText = (document.getElementById('resources') as HTMLTextAreaElement).value;
-        const resources = resourcesText.split('\n').map((r: string) => r.trim()).filter(Boolean);
+      const resourcesText = document.getElementById('resources').value;
+      const resources = resourcesText.split('\n').map(r => r.trim()).filter(Boolean);
 
-        const data = {
-          title: (document.getElementById('title') as HTMLInputElement).value,
-          description: (document.getElementById('description') as HTMLTextAreaElement).value,
-          status: (document.getElementById('status') as HTMLSelectElement).value,
-          progress: parseInt(progress.value),
-          resources: resources,
-          startDate: (document.getElementById('start-date') as HTMLInputElement).value,
-          endDate: (document.getElementById('end-date') as HTMLInputElement).value
-        };
+      const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        status: document.getElementById('status').value,
+        progress: parseInt(progress.value),
+        resources: resources,
+        startDate: document.getElementById('start-date').value,
+        endDate: document.getElementById('end-date').value
+      };
 
-        try {
-          window.learningManager.createItem(data);
-          alert('学习项目已添加！');
-          window.location.href = '/learning';
-        } catch (error: any) {
-          alert('添加失败：' + error.message);
-        }
-      });
+      try {
+        const response = await fetch('/api/learning', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('添加失败');
+        alert('学习项目已添加！');
+        window.location.href = '/learning';
+      } catch (error) {
+        alert('添加失败：' + error.message);
+      }
     });
   </script>
 </Layout>

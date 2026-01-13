@@ -46,19 +46,18 @@ import Layout from '../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../scripts/content-manager.js"></script>
   <script>
-    const form = document.getElementById('moment-form') as HTMLFormElement;
+    const form = document.getElementById('moment-form');
 
-    form.addEventListener('submit', (e: Event) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const title = (document.getElementById('title') as HTMLInputElement).value;
-      const date = (document.getElementById('date') as HTMLInputElement).value;
-      const content = (document.getElementById('content') as HTMLTextAreaElement).value;
-      const mood = (document.getElementById('mood') as HTMLInputElement).value;
-      const tagsInput = (document.getElementById('tags') as HTMLInputElement).value;
-      const tags = tagsInput ? tagsInput.split(',').map((t: string) => t.trim()) : [];
+      const title = document.getElementById('title').value;
+      const date = document.getElementById('date').value;
+      const content = document.getElementById('content').value;
+      const mood = document.getElementById('mood').value;
+      const tagsInput = document.getElementById('tags').value;
+      const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()) : [];
 
       const momentData = {
         title,
@@ -69,10 +68,15 @@ import Layout from '../../layouts/Layout.astro';
       };
 
       try {
-        window.lifeManager.createItem(momentData);
+        const response = await fetch('/api/life', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(momentData)
+        });
+        if (!response.ok) throw new Error('保存失败');
         alert('生活瞬间已保存！');
         window.location.href = '/life';
-      } catch (error: any) {
+      } catch (error) {
         alert('保存失败：' + error.message);
       }
     });

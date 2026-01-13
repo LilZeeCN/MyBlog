@@ -69,69 +69,69 @@ import Layout from '../../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+      const loading = document.getElementById('loading');
+      const form = document.getElementById('learning-form');
+      const progress = document.getElementById('progress');
+      const progressDisplay = document.getElementById('progress-display');
 
-        console.log('正在编辑 slug:', slug);
-        const project = window.learningManager.getItem(slug);
-        console.log('找到的项目:', project);
+      try {
+        const response = await fetch(`/api/learning/${encodeURIComponent(slug)}`);
+        if (!response.ok) throw new Error('未找到该学习项目');
 
-        const loading = document.getElementById('loading')!;
-        const form = document.getElementById('learning-form') as HTMLFormElement;
-        const progress = document.getElementById('progress') as HTMLInputElement;
-        const progressDisplay = document.getElementById('progress-display')!;
-
-        if (!project) {
-          alert('未找到该学习项目');
-          window.location.href = '/learning';
-          return;
-        }
+        const project = await response.json();
 
         loading.classList.add('hidden');
         form.classList.remove('hidden');
 
-        (document.getElementById('title') as HTMLInputElement).value = project.title || '';
-        (document.getElementById('description') as HTMLTextAreaElement).value = project.description || '';
-        (document.getElementById('status') as HTMLSelectElement).value = project.status || '进行中';
+        document.getElementById('title').value = project.title || '';
+        document.getElementById('description').value = project.description || '';
+        document.getElementById('status').value = project.status || '进行中';
         progress.value = (project.progress || 0).toString();
         progressDisplay.textContent = progress.value + '%';
-        (document.getElementById('resources') as HTMLTextAreaElement).value = project.resources?.join('\n') || '';
-        (document.getElementById('start-date') as HTMLInputElement).value = project.startDate || '';
-        (document.getElementById('end-date') as HTMLInputElement).value = project.endDate || '';
+        document.getElementById('resources').value = project.resources?.join('\n') || '';
+        document.getElementById('start-date').value = project.startDate || '';
+        document.getElementById('end-date').value = project.endDate || '';
 
-        // 更新进度显示
         progress.addEventListener('input', () => {
           progressDisplay.textContent = progress.value + '%';
         });
 
-        form.addEventListener('submit', (e: Event) => {
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
 
-          const resourcesText = (document.getElementById('resources') as HTMLTextAreaElement).value;
-          const resources = resourcesText.split('\n').map((r: string) => r.trim()).filter(Boolean);
+          const resourcesText = document.getElementById('resources').value;
+          const resources = resourcesText.split('\n').map(r => r.trim()).filter(Boolean);
 
           const updates = {
-            title: (document.getElementById('title') as HTMLInputElement).value,
-            description: (document.getElementById('description') as HTMLTextAreaElement).value,
-            status: (document.getElementById('status') as HTMLSelectElement).value,
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            status: document.getElementById('status').value,
             progress: parseInt(progress.value),
             resources: resources,
-            startDate: (document.getElementById('start-date') as HTMLInputElement).value,
-            endDate: (document.getElementById('end-date') as HTMLInputElement).value
+            startDate: document.getElementById('start-date').value,
+            endDate: document.getElementById('end-date').value
           };
 
           try {
-            window.learningManager.updateItem(project.id, updates);
+            const putResponse = await fetch(`/api/learning/${encodeURIComponent(slug)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updates)
+            });
+            if (!putResponse.ok) throw new Error('保存失败');
             alert('修改已保存！');
             window.location.href = '/learning';
-          } catch (error: any) {
+          } catch (error) {
             alert('保存失败：' + error.message);
           }
         });
-      }, 100);
+      } catch (error) {
+        alert('加载失败：' + error.message);
+        window.location.href = '/learning';
+      }
     });
   </script>
 </Layout>

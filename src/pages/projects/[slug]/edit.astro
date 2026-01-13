@@ -77,65 +77,66 @@ import Layout from '../../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+      const loading = document.getElementById('loading');
+      const form = document.getElementById('project-form');
 
-        console.log('正在编辑 slug:', slug);
-        const project = window.projectsManager.getItem(slug);
-        console.log('找到的项目:', project);
+      try {
+        const response = await fetch(`/api/projects/${encodeURIComponent(slug)}`);
+        if (!response.ok) throw new Error('未找到该项目');
 
-        const loading = document.getElementById('loading')!;
-        const form = document.getElementById('project-form') as HTMLFormElement;
-
-        if (!project) {
-          alert('未找到该项目');
-          window.location.href = '/projects';
-          return;
-        }
+        const project = await response.json();
 
         loading.classList.add('hidden');
         form.classList.remove('hidden');
 
-        (document.getElementById('title') as HTMLInputElement).value = project.title || '';
-        (document.getElementById('description') as HTMLTextAreaElement).value = project.description || '';
-        (document.getElementById('cover-emoji') as HTMLInputElement).value = project.coverEmoji || '💻';
-        (document.getElementById('status') as HTMLSelectElement).value = project.status || 'Stable';
-        (document.getElementById('technologies') as HTMLInputElement).value = project.technologies?.join(', ') || '';
-        (document.getElementById('github-url') as HTMLInputElement).value = project.githubUrl || '';
-        (document.getElementById('demo-url') as HTMLInputElement).value = project.demoUrl || '';
-        (document.getElementById('stars') as HTMLInputElement).value = (project.stars || 0).toString();
-        (document.getElementById('forks') as HTMLInputElement).value = (project.forks || 0).toString();
+        document.getElementById('title').value = project.title || '';
+        document.getElementById('description').value = project.description || '';
+        document.getElementById('cover-emoji').value = project.coverEmoji || '💻';
+        document.getElementById('status').value = project.status || 'Stable';
+        document.getElementById('technologies').value = project.technologies?.join(', ') || '';
+        document.getElementById('github-url').value = project.githubUrl || '';
+        document.getElementById('demo-url').value = project.demoUrl || '';
+        document.getElementById('stars').value = (project.stars || 0).toString();
+        document.getElementById('forks').value = (project.forks || 0).toString();
 
-        form.addEventListener('submit', (e: Event) => {
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
 
-          const technologies = (document.getElementById('technologies') as HTMLInputElement).value
-            .split(',').map((t: string) => t.trim()).filter(Boolean);
+          const technologies = document.getElementById('technologies').value
+            .split(',').map(t => t.trim()).filter(Boolean);
 
           const updates = {
-            title: (document.getElementById('title') as HTMLInputElement).value,
-            description: (document.getElementById('description') as HTMLTextAreaElement).value,
-            coverEmoji: (document.getElementById('cover-emoji') as HTMLInputElement).value,
-            status: (document.getElementById('status') as HTMLSelectElement).value,
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            coverEmoji: document.getElementById('cover-emoji').value,
+            status: document.getElementById('status').value,
             technologies: technologies,
-            githubUrl: (document.getElementById('github-url') as HTMLInputElement).value,
-            demoUrl: (document.getElementById('demo-url') as HTMLInputElement).value,
-            stars: parseInt((document.getElementById('stars') as HTMLInputElement).value) || 0,
-            forks: parseInt((document.getElementById('forks') as HTMLInputElement).value) || 0
+            githubUrl: document.getElementById('github-url').value,
+            demoUrl: document.getElementById('demo-url').value,
+            stars: parseInt(document.getElementById('stars').value) || 0,
+            forks: parseInt(document.getElementById('forks').value) || 0
           };
 
           try {
-            window.projectsManager.updateItem(project.id, updates);
+            const putResponse = await fetch(`/api/projects/${encodeURIComponent(slug)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updates)
+            });
+            if (!putResponse.ok) throw new Error('保存失败');
             alert('修改已保存！');
             window.location.href = '/projects';
-          } catch (error: any) {
+          } catch (error) {
             alert('保存失败：' + error.message);
           }
         });
-      }, 100);
+      } catch (error) {
+        alert('加载失败：' + error.message);
+        window.location.href = '/projects';
+      }
     });
   </script>
 </Layout>

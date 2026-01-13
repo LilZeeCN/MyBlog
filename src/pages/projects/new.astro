@@ -73,37 +73,39 @@ import Layout from '../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('project-form') as HTMLFormElement;
+    const form = document.getElementById('project-form');
 
-      form.addEventListener('submit', (e: Event) => {
-        e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        const technologies = (document.getElementById('technologies') as HTMLInputElement).value
-          .split(',').map((t: string) => t.trim()).filter(Boolean);
+      const technologies = document.getElementById('technologies').value
+        .split(',').map(t => t.trim()).filter(Boolean);
 
-        const data = {
-          title: (document.getElementById('title') as HTMLInputElement).value,
-          description: (document.getElementById('description') as HTMLTextAreaElement).value,
-          coverEmoji: (document.getElementById('cover-emoji') as HTMLInputElement).value,
-          status: (document.getElementById('status') as HTMLSelectElement).value,
-          technologies: technologies,
-          githubUrl: (document.getElementById('github-url') as HTMLInputElement).value,
-          demoUrl: (document.getElementById('demo-url') as HTMLInputElement).value,
-          stars: parseInt((document.getElementById('stars') as HTMLInputElement).value) || 0,
-          forks: parseInt((document.getElementById('forks') as HTMLInputElement).value) || 0
-        };
+      const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        coverEmoji: document.getElementById('cover-emoji').value,
+        status: document.getElementById('status').value,
+        technologies: technologies,
+        githubUrl: document.getElementById('github-url').value,
+        demoUrl: document.getElementById('demo-url').value,
+        stars: parseInt(document.getElementById('stars').value) || 0,
+        forks: parseInt(document.getElementById('forks').value) || 0
+      };
 
-        try {
-          window.projectsManager.createItem(data);
-          alert('项目已添加！');
-          window.location.href = '/projects';
-        } catch (error: any) {
-          alert('添加失败：' + error.message);
-        }
-      });
+      try {
+        const response = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('添加失败');
+        alert('项目已添加！');
+        window.location.href = '/projects';
+      } catch (error) {
+        alert('添加失败：' + error.message);
+      }
     });
   </script>
 </Layout>

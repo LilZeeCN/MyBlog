@@ -50,54 +50,55 @@ import Layout from '../../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
+      const loading = document.getElementById('loading');
+      const form = document.getElementById('thought-form');
 
-        console.log('正在编辑 slug:', slug);
-        const thought = window.philosophyManager.getItem(slug);
-        console.log('找到的思考:', thought);
+      try {
+        const response = await fetch(`/api/philosophy/${encodeURIComponent(slug)}`);
+        if (!response.ok) throw new Error('未找到该思考');
 
-        const loading = document.getElementById('loading')!;
-        const form = document.getElementById('thought-form') as HTMLFormElement;
-
-        if (!thought) {
-          alert('未找到该思考');
-          window.location.href = '/philosophy';
-          return;
-        }
+        const thought = await response.json();
 
         loading.classList.add('hidden');
         form.classList.remove('hidden');
 
-        (document.getElementById('quote') as HTMLTextAreaElement).value = thought.quote || '';
-        (document.getElementById('author') as HTMLInputElement).value = thought.author || '';
-        (document.getElementById('category') as HTMLInputElement).value = thought.category || '';
-        (document.getElementById('content') as HTMLTextAreaElement).value = thought.content || '';
-        (document.getElementById('tags') as HTMLInputElement).value = thought.tags?.join(', ') || '';
+        document.getElementById('quote').value = thought.quote || '';
+        document.getElementById('author').value = thought.author || '';
+        document.getElementById('category').value = thought.category || '';
+        document.getElementById('content').value = thought.content || '';
+        document.getElementById('tags').value = thought.tags?.join(', ') || '';
 
-        form.addEventListener('submit', (e: Event) => {
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
 
           const updates = {
-            quote: (document.getElementById('quote') as HTMLTextAreaElement).value,
-            author: (document.getElementById('author') as HTMLInputElement).value,
-            category: (document.getElementById('category') as HTMLInputElement).value,
-            content: (document.getElementById('content') as HTMLTextAreaElement).value,
-            tags: (document.getElementById('tags') as HTMLInputElement).value.split(',').map((t: string) => t.trim()).filter(Boolean)
+            quote: document.getElementById('quote').value,
+            author: document.getElementById('author').value,
+            category: document.getElementById('category').value,
+            content: document.getElementById('content').value,
+            tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean)
           };
 
           try {
-            window.philosophyManager.updateItem(thought.id, updates);
+            const putResponse = await fetch(`/api/philosophy/${encodeURIComponent(slug)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updates)
+            });
+            if (!putResponse.ok) throw new Error('保存失败');
             alert('修改已保存！');
             window.location.href = '/philosophy';
-          } catch (error: any) {
+          } catch (error) {
             alert('保存失败：' + error.message);
           }
         });
-      }, 100);
+      } catch (error) {
+        alert('加载失败：' + error.message);
+        window.location.href = '/philosophy';
+      }
     });
   </script>
 </Layout>

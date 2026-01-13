@@ -49,37 +49,39 @@ import Layout from '../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('rant-form') as HTMLFormElement;
-      const angerLevel = document.getElementById('anger-level') as HTMLInputElement;
-      const angerDisplay = document.getElementById('anger-display')!;
+    const form = document.getElementById('rant-form');
+    const angerLevel = document.getElementById('anger-level');
+    const angerDisplay = document.getElementById('anger-display');
 
-      // 更新愤怒指数显示
-      angerLevel.addEventListener('input', () => {
-        angerDisplay.textContent = angerLevel.value;
-      });
+    // 更新愤怒指数显示
+    angerLevel.addEventListener('input', () => {
+      angerDisplay.textContent = angerLevel.value;
+    });
 
-      form.addEventListener('submit', (e: Event) => {
-        e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        const data = {
-          title: (document.getElementById('title') as HTMLInputElement).value,
-          content: (document.getElementById('content') as HTMLTextAreaElement).value,
-          angerLevel: parseInt((document.getElementById('anger-level') as HTMLInputElement).value),
-          category: (document.getElementById('category') as HTMLInputElement).value,
-          reactions: 0
-        };
+      const data = {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        angerLevel: parseInt(document.getElementById('anger-level').value),
+        category: document.getElementById('category').value,
+        reactions: 0
+      };
 
-        try {
-          window.rantsManager.createItem(data);
-          alert('吐槽已发布！');
-          window.location.href = '/rants';
-        } catch (error: any) {
-          alert('发布失败：' + error.message);
-        }
-      });
+      try {
+        const response = await fetch('/api/rants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('发布失败');
+        alert('吐槽已发布！');
+        window.location.href = '/rants';
+      } catch (error) {
+        alert('发布失败：' + error.message);
+      }
     });
   </script>
 </Layout>

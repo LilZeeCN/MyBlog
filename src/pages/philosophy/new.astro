@@ -46,30 +46,32 @@ import Layout from '../../layouts/Layout.astro';
     </form>
   </div>
 
-  <script src="../../scripts/content-manager.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('philosophy-form') as HTMLFormElement;
+    const form = document.getElementById('philosophy-form');
 
-      form.addEventListener('submit', (e: Event) => {
-        e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        const data = {
-          quote: (document.getElementById('quote') as HTMLTextAreaElement).value,
-          author: (document.getElementById('author') as HTMLInputElement).value,
-          category: (document.getElementById('category') as HTMLInputElement).value,
-          content: (document.getElementById('content') as HTMLTextAreaElement).value,
-          tags: (document.getElementById('tags') as HTMLInputElement).value.split(',').map((t: string) => t.trim()).filter(Boolean)
-        };
+      const data = {
+        quote: document.getElementById('quote').value,
+        author: document.getElementById('author').value,
+        category: document.getElementById('category').value,
+        content: document.getElementById('content').value,
+        tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean)
+      };
 
-        try {
-          window.philosophyManager.createItem(data);
-          alert('思考已发布！');
-          window.location.href = '/philosophy';
-        } catch (error: any) {
-          alert('发布失败：' + error.message);
-        }
-      });
+      try {
+        const response = await fetch('/api/philosophy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('发布失败');
+        alert('思考已发布！');
+        window.location.href = '/philosophy';
+      } catch (error) {
+        alert('发布失败：' + error.message);
+      }
     });
   </script>
 </Layout>
