@@ -93,11 +93,60 @@ const {
         mobileMenu?.classList.toggle('hidden');
       });
 
+      // 全局登录态（缓存一次 /api/auth/check 结果，供全站复用）
+      document.documentElement.dataset.authenticated = 'false';
+
+      let authStatusCache = null;
+      let authStatusPromise = null;
+
+      async function fetchAuthStatus() {
+        const response = await fetch('/api/auth/check');
+        if (!response.ok) return { authenticated: false };
+        const data = await response.json().catch(() => ({}));
+        return { authenticated: Boolean(data.authenticated) };
+      }
+
+      async function getAuthStatus(options = {}) {
+        const force = options && options.force === true;
+        if (!force && authStatusCache) return authStatusCache;
+        if (!force && authStatusPromise) return authStatusPromise;
+
+        authStatusPromise = fetchAuthStatus()
+          .catch(() => ({ authenticated: false }))
+          .then((data) => {
+            authStatusCache = data;
+            return data;
+          })
+          .finally(() => {
+            authStatusPromise = null;
+          });
+
+        return authStatusPromise;
+      }
+
+      async function refreshAuthDataset() {
+        const { authenticated } = await getAuthStatus();
+        document.documentElement.dataset.authenticated = authenticated ? 'true' : 'false';
+        window.dispatchEvent(new CustomEvent('auth:change', { detail: { authenticated } }));
+        return authenticated;
+      }
+
+      window.getAuthStatus = getAuthStatus;
+      window.requireAuth = async function () {
+        const { authenticated } = await getAuthStatus();
+        if (!authenticated) {
+          const next = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = `/login?next=${next}`;
+          return false;
+        }
+        return true;
+      };
+
       // 检查登录状态并更新UI
       async function updateAuthUI() {
         try {
-          const response = await fetch('/api/auth/check');
-          const data = await response.json();
+          const data = await getAuthStatus();
+          document.documentElement.dataset.authenticated = data.authenticated ? 'true' : 'false';
 
           // 桌面端按钮
           const loginLinkDesktop = document.getElementById('login-link-desktop');
@@ -122,6 +171,7 @@ const {
         } catch (error) {
           // 出错时默认显示登录按钮
           console.error('Failed to check auth status:', error);
+          document.documentElement.dataset.authenticated = 'false';
         }
       }
 
@@ -143,6 +193,7 @@ const {
 
       // 页面加载时检查登录状态
       updateAuthUI();
+      refreshAuthDataset();
     </script>
   </body>
 </html>

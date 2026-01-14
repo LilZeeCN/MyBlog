@@ -9,7 +9,7 @@ import Layout from '../../layouts/Layout.astro';
       <div class="text-6xl mb-4 animate-float">💻</div>
       <h1 class="text-4xl md:text-5xl font-bold mb-4">代码项目</h1>
       <p class="text-xl text-text-secondary">展示我的编程作品</p>
-      <a href="/projects/new" class="inline-block mt-6 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
+      <a href="/projects/new" class="auth-only inline-block mt-6 px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth font-medium">
         💻 添加项目
       </a>
     </section>
@@ -25,7 +25,7 @@ import Layout from '../../layouts/Layout.astro';
     <div id="empty-state" class="hidden text-center py-12">
       <div class="text-6xl mb-4">💻</div>
       <p class="text-xl text-text-muted mb-6">还没有项目，开始添加第一个吧</p>
-      <a href="/projects/new" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+      <a href="/projects/new" class="auth-only inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
         添加项目
       </a>
     </div>
@@ -136,8 +136,8 @@ import Layout from '../../layouts/Layout.astro';
               <!-- 操作按钮 -->
               <div class="flex gap-3 border-t pt-4">
                 <a href="/projects/${project.slug}" class="text-primary-400 hover:text-primary-500 transition-smooth text-sm">查看详情</a>
-                <a href="/projects/${project.slug}/edit" class="text-blue-500 hover:text-blue-600 transition-smooth text-sm">编辑</a>
-                <button class="delete-btn text-red-500 hover:text-red-600 transition-smooth text-sm" data-id="${project.id}">删除</button>
+                <a href="/projects/${project.slug}/edit" class="auth-only text-blue-500 hover:text-blue-600 transition-smooth text-sm">编辑</a>
+                <button class="auth-only delete-btn text-red-500 hover:text-red-600 transition-smooth text-sm" data-id="${project.id}">删除</button>
               </div>
             </div>
           `;

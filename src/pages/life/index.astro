@@ -13,7 +13,7 @@ import Layout from '../../layouts/Layout.astro';
 
     <!-- 操作栏 -->
     <div class="flex justify-end items-center mb-8 max-w-4xl mx-auto">
-      <a href="/life/new" class="px-6 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth flex items-center gap-2">
+      <a href="/life/new" class="auth-only px-6 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
@@ -33,7 +33,7 @@ import Layout from '../../layouts/Layout.astro';
         <div class="text-6xl mb-4">📭</div>
         <h2 class="text-2xl font-bold mb-4">还没有生活记录</h2>
         <p class="text-text-muted mb-6">开始记录你的第一个生活瞬间吧！</p>
-        <a href="/life/new" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+        <a href="/life/new" class="auth-only inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
           记录第一个瞬间
         </a>
       </div>
@@ -97,8 +97,8 @@ import Layout from '../../layouts/Layout.astro';
 
               <div class="flex gap-3 mt-4 ${isLeft ? 'justify-end' : ''}">
                 <a href="/life/${moment.slug}" class="text-sm text-primary-400 hover:text-primary-300 transition-smooth">查看详情</a>
-                <a href="/life/${moment.slug}/edit" class="text-sm text-text-muted hover:text-primary-400 transition-smooth">✏️ 编辑</a>
-                <button onclick="deleteMoment('${moment.id}', '${moment.title}')" class="text-sm text-text-muted hover:text-red-400 transition-smooth">🗑️ 删除</button>
+                <a href="/life/${moment.slug}/edit" class="auth-only text-sm text-text-muted hover:text-primary-400 transition-smooth">✏️ 编辑</a>
+                <button onclick="deleteMoment('${moment.id}', '${moment.title}')" class="auth-only text-sm text-text-muted hover:text-red-400 transition-smooth">🗑️ 删除</button>
               </div>
             </div>
           </div>

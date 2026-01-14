@@ -47,38 +47,57 @@ import Layout from '../../layouts/Layout.astro';
   </div>
 
   <script>
-    const form = document.getElementById('moment-form');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const title = document.getElementById('title').value;
-      const date = document.getElementById('date').value;
-      const content = document.getElementById('content').value;
-      const mood = document.getElementById('mood').value;
-      const tagsInput = document.getElementById('tags').value;
-      const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()) : [];
-
-      const momentData = {
-        title,
-        date,
-        content,
-        mood,
-        tags
-      };
-
+    async function ensureAuth(): Promise<boolean> {
       try {
-        const response = await fetch('/api/life', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(momentData)
-        });
-        if (!response.ok) throw new Error('保存失败');
-        alert('生活瞬间已保存！');
-        window.location.href = '/life';
-      } catch (error) {
-        alert('保存失败：' + error.message);
+        const res = await fetch('/api/auth/check');
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) return true;
+      } catch {
+        // ignore
       }
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+      return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!(await ensureAuth())) return;
+
+      const form = document.getElementById('moment-form');
+      if (!form) return;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('title').value;
+        const date = document.getElementById('date').value;
+        const content = document.getElementById('content').value;
+        const mood = document.getElementById('mood').value;
+        const tagsInput = document.getElementById('tags').value;
+        const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()) : [];
+
+        const momentData = {
+          title,
+          date,
+          content,
+          mood,
+          tags
+        };
+
+        try {
+          const response = await fetch('/api/life', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(momentData)
+          });
+          if (response.status === 401) throw new Error('未授权，请先登录');
+          if (!response.ok) throw new Error('保存失败');
+          alert('生活瞬间已保存！');
+          window.location.href = '/life';
+        } catch (error) {
+          alert('保存失败：' + error.message);
+        }
+      });
     });
   </script>
 </Layout>

@@ -1,6 +1,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400&display=swap');
 
 /* 全局样式 */
 :root {
@@ -43,8 +44,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 字体导入 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400&display=swap');
+/* 未登录时隐藏需要权限的元素（JS 会在登录后设置 html[data-authenticated="true"]） */
+html:not([data-authenticated='true']) .auth-only {
+  display: none !important;
+}
 
 /* 玻璃态效果 */
 .glass-effect {

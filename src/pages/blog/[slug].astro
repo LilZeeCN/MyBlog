@@ -1,0 +1,92 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="文章详情 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <!-- 返回按钮 -->
+    <a href="/blog" class="inline-flex items-center gap-2 text-text-muted hover:text-primary-400 transition-smooth mb-8">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      返回博客列表
+    </a>
+
+    <!-- 文章加载状态 -->
+    <div id="loading" class="text-center py-12">
+      <div class="animate-pulse">正在加载...</div>
+    </div>
+
+    <!-- 文章未找到 -->
+    <div id="not-found" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😕</div>
+      <h2 class="text-2xl font-bold mb-4">文章未找到</h2>
+      <p class="text-text-muted mb-6">该文章可能已被删除或不存在</p>
+      <a href="/blog" class="inline-block px-6 py-3 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth">
+        浏览其他文章
+      </a>
+    </div>
+
+    <!-- 文章内容 -->
+    <article id="article-content" class="hidden">
+      <!-- 文章头部 -->
+      <header class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span id="post-cover" class="text-5xl">📝</span>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span id="post-category" class="px-3 py-1 bg-primary-100 text-primary-600 rounded-full text-xs font-medium">分类</span>
+              <span id="post-mood" class="text-sm">😐</span>
+            </div>
+          </div>
+        </div>
+
+        <h1 id="post-title" class="text-3xl md:text-4xl font-bold mb-4 leading-tight">文章标题</h1>
+
+        <div class="flex items-center gap-4 text-sm text-text-muted">
+          <span id="post-date">📅 日期</span>
+          <span id="post-reading-time">⏱️ 阅读时间</span>
+        </div>
+
+        <!-- 标签 -->
+        <div id="post-tags" class="flex flex-wrap gap-2 mt-4">
+          <!-- 标签将在这里动态生成 -->
+        </div>
+      </header>
+
+      <!-- 摘要 -->
+      <div id="post-excerpt" class="bg-primary-50 rounded-xl p-6 mb-8 text-lg text-text-secondary">
+        摘要内容
+      </div>
+
+      <!-- 文章正文 -->
+      <div id="post-body" class="prose prose-lg max-w-none">
+        <!-- Markdown 内容将被渲染到这里 -->
+      </div>
+
+      <!-- 文章底部 -->
+      <footer class="mt-12 pt-8 border-t border-primary-200">
+        <div class="flex justify-between items-center flex-wrap gap-4">
+          <div class="text-sm text-text-muted">
+            感谢阅读！如果喜欢这篇文章，欢迎分享给朋友 🌟
+          </div>
+          <div class="flex gap-3">
+            <a id="edit-btn" href="#" class="auth-only px-4 py-2 border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-smooth text-sm">
+              ✏️ 编辑
+            </a>
+            <button id="delete-btn" class="auth-only px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-smooth text-sm">
+              🗑️ 删除
+            </button>
+            <a href="/blog/new" class="auth-only px-4 py-2 bg-primary-300 text-white rounded-lg hover:bg-primary-400 transition-smooth text-sm">
+              写文章
+            </a>
+          </div>
+        </div>
+      </footer>
+    </article>
+  </div>
+
+  <!-- 引入脚本 -->
+  <script src="../../scripts/blog-manager.js"></script>
+  <script src="../../scripts/blog-detail.js"></script>
+</Layout>

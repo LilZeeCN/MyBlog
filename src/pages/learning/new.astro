@@ -67,43 +67,63 @@ https://example.com/resource2"></textarea>
   </div>
 
   <script>
-    const form = document.getElementById('learning-form');
-    const progress = document.getElementById('progress');
-    const progressDisplay = document.getElementById('progress-display');
-
-    // 更新进度显示
-    progress.addEventListener('input', () => {
-      progressDisplay.textContent = progress.value + '%';
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const resourcesText = document.getElementById('resources').value;
-      const resources = resourcesText.split('\n').map(r => r.trim()).filter(Boolean);
-
-      const data = {
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        status: document.getElementById('status').value,
-        progress: parseInt(progress.value),
-        resources: resources,
-        startDate: document.getElementById('start-date').value,
-        endDate: document.getElementById('end-date').value
-      };
-
+    async function ensureAuth(): Promise<boolean> {
       try {
-        const response = await fetch('/api/learning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        if (!response.ok) throw new Error('添加失败');
-        alert('学习项目已添加！');
-        window.location.href = '/learning';
-      } catch (error) {
-        alert('添加失败：' + error.message);
+        const res = await fetch('/api/auth/check');
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) return true;
+      } catch {
+        // ignore
       }
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+      return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!(await ensureAuth())) return;
+
+      const form = document.getElementById('learning-form');
+      const progress = document.getElementById('progress');
+      const progressDisplay = document.getElementById('progress-display');
+
+      if (!form || !progress || !progressDisplay) return;
+
+      // 更新进度显示
+      progress.addEventListener('input', () => {
+        progressDisplay.textContent = progress.value + '%';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const resourcesText = document.getElementById('resources').value;
+        const resources = resourcesText.split('\n').map(r => r.trim()).filter(Boolean);
+
+        const data = {
+          title: document.getElementById('title').value,
+          description: document.getElementById('description').value,
+          status: document.getElementById('status').value,
+          progress: parseInt(progress.value),
+          resources: resources,
+          startDate: document.getElementById('start-date').value,
+          endDate: document.getElementById('end-date').value
+        };
+
+        try {
+          const response = await fetch('/api/learning', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (response.status === 401) throw new Error('未授权，请先登录');
+          if (!response.ok) throw new Error('添加失败');
+          alert('学习项目已添加！');
+          window.location.href = '/learning';
+        } catch (error) {
+          alert('添加失败：' + error.message);
+        }
+      });
     });
   </script>
 </Layout>

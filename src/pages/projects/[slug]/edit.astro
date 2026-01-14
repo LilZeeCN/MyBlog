@@ -78,7 +78,22 @@ import Layout from '../../../layouts/Layout.astro';
   </div>
 
   <script>
+    async function ensureAuth(): Promise<boolean> {
+      try {
+        const res = await fetch('/api/auth/check');
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) return true;
+      } catch {
+        // ignore
+      }
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+      return false;
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
+      if (!(await ensureAuth())) return;
+
       const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[1]);
       const loading = document.getElementById('loading');
       const form = document.getElementById('project-form');
@@ -126,6 +141,7 @@ import Layout from '../../../layouts/Layout.astro';
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(updates)
             });
+            if (putResponse.status === 401) throw new Error('未授权，请先登录');
             if (!putResponse.ok) throw new Error('保存失败');
             alert('修改已保存！');
             window.location.href = '/projects';

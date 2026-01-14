@@ -74,38 +74,57 @@ import Layout from '../../layouts/Layout.astro';
   </div>
 
   <script>
-    const form = document.getElementById('project-form');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const technologies = document.getElementById('technologies').value
-        .split(',').map(t => t.trim()).filter(Boolean);
-
-      const data = {
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        coverEmoji: document.getElementById('cover-emoji').value,
-        status: document.getElementById('status').value,
-        technologies: technologies,
-        githubUrl: document.getElementById('github-url').value,
-        demoUrl: document.getElementById('demo-url').value,
-        stars: parseInt(document.getElementById('stars').value) || 0,
-        forks: parseInt(document.getElementById('forks').value) || 0
-      };
-
+    async function ensureAuth(): Promise<boolean> {
       try {
-        const response = await fetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        if (!response.ok) throw new Error('添加失败');
-        alert('项目已添加！');
-        window.location.href = '/projects';
-      } catch (error) {
-        alert('添加失败：' + error.message);
+        const res = await fetch('/api/auth/check');
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) return true;
+      } catch {
+        // ignore
       }
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+      return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!(await ensureAuth())) return;
+
+      const form = document.getElementById('project-form');
+      if (!form) return;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const technologies = document.getElementById('technologies').value
+          .split(',').map(t => t.trim()).filter(Boolean);
+
+        const data = {
+          title: document.getElementById('title').value,
+          description: document.getElementById('description').value,
+          coverEmoji: document.getElementById('cover-emoji').value,
+          status: document.getElementById('status').value,
+          technologies: technologies,
+          githubUrl: document.getElementById('github-url').value,
+          demoUrl: document.getElementById('demo-url').value,
+          stars: parseInt(document.getElementById('stars').value) || 0,
+          forks: parseInt(document.getElementById('forks').value) || 0
+        };
+
+        try {
+          const response = await fetch('/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (response.status === 401) throw new Error('未授权，请先登录');
+          if (!response.ok) throw new Error('添加失败');
+          alert('项目已添加！');
+          window.location.href = '/projects';
+        } catch (error) {
+          alert('添加失败：' + error.message);
+        }
+      });
     });
   </script>
 </Layout>

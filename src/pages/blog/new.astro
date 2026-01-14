@@ -1,0 +1,193 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="写博客 - 我的温馨博客">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <!-- 页面标题 -->
+    <section class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">✍️ 写博客</h1>
+      <p class="text-text-muted">分享你的想法和故事</p>
+    </section>
+
+    <!-- 编辑器表单 -->
+    <form id="blog-form" class="glass-effect rounded-2xl p-8 shadow-lg">
+      <!-- 标题 -->
+      <div class="mb-6">
+        <label for="title" class="block text-sm font-medium mb-2">标题</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          placeholder="给文章起个好标题..."
+          class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+        />
+      </div>
+
+      <!-- 摘要 -->
+      <div class="mb-6">
+        <label for="excerpt" class="block text-sm font-medium mb-2">摘要（可选）</label>
+        <textarea
+          id="excerpt"
+          name="excerpt"
+          rows="2"
+          placeholder="简短描述文章内容..."
+          class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white resize-none"
+        ></textarea>
+      </div>
+
+      <!-- 分类和心情 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <label for="category" class="block text-sm font-medium mb-2">分类</label>
+          <select
+            id="category"
+            name="category"
+            class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+          >
+            <option value="生活">🌱 生活</option>
+            <option value="哲学">🧠 哲学</option>
+            <option value="技术">💻 技术</option>
+            <option value="学习">📚 学习</option>
+            <option value="其他">📝 其他</option>
+          </select>
+        </div>
+        <div>
+          <label for="mood" class="block text-sm font-medium mb-2">心情</label>
+          <select
+            id="mood"
+            name="mood"
+            class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+          >
+            <option value="neutral">😐 平静</option>
+            <option value="happy">😊 开心</option>
+            <option value="excited">🤔 兴奋</option>
+            <option value="thoughtful">🧘 思考</option>
+            <option value="calm">😌 宁静</option>
+            <option value="sad">😢 难过</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 封面图标 -->
+      <div class="mb-6">
+        <label for="coverImage" class="block text-sm font-medium mb-2">封面图标/Emoji</label>
+        <input
+          type="text"
+          id="coverImage"
+          name="coverImage"
+          placeholder="📝"
+          value="📝"
+          class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+        />
+      </div>
+
+      <!-- 标签 -->
+      <div class="mb-6">
+        <label for="tags" class="block text-sm font-medium mb-2">标签（用逗号分隔）</label>
+        <input
+          type="text"
+          id="tags"
+          name="tags"
+          placeholder="生活, 感悟, 成长"
+          class="w-full px-4 py-3 rounded-lg border border-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+        />
+      </div>
+
+      <!-- 内容编辑器 -->
+      <div class="mb-6">
+        <label for="content" class="block text-sm font-medium mb-2">内容（支持 Markdown）</label>
+        <div class="border border-primary-200 rounded-lg overflow-hidden">
+          <!-- 工具栏 -->
+          <div class="bg-primary-50 px-4 py-2 border-b border-primary-200 flex flex-wrap gap-2">
+            <button type="button" data-action="bold" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">**粗体**</button>
+            <button type="button" data-action="italic" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">*斜体*</button>
+            <button type="button" data-action="heading" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm"># 标题</button>
+            <button type="button" data-action="link" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">[链接]</button>
+            <button type="button" data-action="code" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">代码</button>
+            <button type="button" data-action="list" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">- 列表</button>
+            <button type="button" data-action="quote" class="toolbar-btn px-3 py-1 rounded hover:bg-primary-200 text-sm">> 引用</button>
+          </div>
+          <!-- 编辑区域 -->
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows="20"
+            placeholder="在这里开始写作...
+
+支持 Markdown 语法：
+# 一级标题
+## 二级标题
+**粗体**
+*斜体*
+- 列表项
+> 引用
+```代码块```"
+            class="w-full px-4 py-3 focus:outline-none bg-white resize-y font-mono text-sm"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="flex gap-4 justify-end">
+        <button
+          type="button"
+          id="cancel-btn"
+          class="px-6 py-3 rounded-lg border border-primary-200 hover:bg-primary-50 transition-smooth"
+        >
+          取消
+        </button>
+        <button
+          type="button"
+          id="preview-btn"
+          class="px-6 py-3 rounded-lg border border-primary-200 hover:bg-primary-50 transition-smooth"
+        >
+          预览
+        </button>
+        <button
+          type="submit"
+          class="px-6 py-3 rounded-lg bg-primary-300 text-white hover:bg-primary-400 transition-smooth"
+        >
+          发布文章
+        </button>
+      </div>
+    </form>
+
+    <!-- 预览模态框 -->
+    <dialog id="preview-modal" class="rounded-2xl shadow-lg backdrop:bg-black/50 max-w-4xl w-full mx-auto max-h-[90vh] overflow-y-auto">
+      <div class="p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">预览</h2>
+          <button id="close-preview" class="text-text-muted hover:text-text-primary">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="preview-content" class="prose prose-sm max-w-none">
+          <!-- 预览内容 -->
+        </div>
+      </div>
+    </dialog>
+  </div>
+
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/check');
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) return;
+      } catch {
+        // ignore
+      }
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+    })();
+  </script>
+
+  <!-- 引入博客管理器和编辑器脚本 -->
+  <script src="../../scripts/blog-manager.js"></script>
+  <script src="../../scripts/blog-editor.js"></script>
+</Layout>
