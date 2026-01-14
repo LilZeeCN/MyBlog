@@ -80,18 +80,15 @@ import Layout from '../../layouts/Layout.astro';
       if (!loading || !notFound || !content) return;
 
       try {
-        const response = await fetch('/api/learning');
-        if (!response.ok) throw new Error('获取数据失败');
-        const allProjects = await response.json();
-
-        const project = allProjects.find((p: any) => p.slug === slug);
-
         loading.classList.add('hidden');
-
-        if (!project) {
+        const response = await fetch(`/api/learning/${encodeURIComponent(slug)}`);
+        if (response.status === 404) {
           notFound.classList.remove('hidden');
           return;
         }
+        if (!response.ok) throw new Error('获取数据失败');
+
+        const project = await response.json();
 
         content.classList.remove('hidden');
 

@@ -60,18 +60,15 @@ import Layout from '../../layouts/Layout.astro';
       if (!loading || !notFound || !content) return;
 
       try {
-        const response = await fetch('/api/life');
-        if (!response.ok) throw new Error('获取数据失败');
-        const allMoments = await response.json();
-
-        const moment = allMoments.find((m: any) => m.slug === slug);
-
         loading.classList.add('hidden');
-
-        if (!moment) {
+        const response = await fetch(`/api/life/${encodeURIComponent(slug)}`);
+        if (response.status === 404) {
           notFound.classList.remove('hidden');
           return;
         }
+        if (!response.ok) throw new Error('获取数据失败');
+
+        const moment = await response.json();
 
         content.classList.remove('hidden');
         (document.getElementById('moment-date')!).textContent = moment.date || formatDate(moment.createdAt);

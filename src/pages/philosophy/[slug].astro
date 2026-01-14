@@ -69,18 +69,15 @@ import Layout from '../../layouts/Layout.astro';
       if (!loading || !notFound || !content) return;
 
       try {
-        const response = await fetch('/api/philosophy');
-        if (!response.ok) throw new Error('获取数据失败');
-        const allThoughts = await response.json();
-
-        const thought = allThoughts.find((t: any) => t.slug === slug);
-
         loading.classList.add('hidden');
-
-        if (!thought) {
+        const response = await fetch(`/api/philosophy/${encodeURIComponent(slug)}`);
+        if (response.status === 404) {
           notFound.classList.remove('hidden');
           return;
         }
+        if (!response.ok) throw new Error('获取数据失败');
+
+        const thought = await response.json();
 
         content.classList.remove('hidden');
 

@@ -16,18 +16,7 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
   ],
-  image: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.sanity.io',
-      }
-    ]
-  },
   vite: {
-    optimizeDeps: {
-      exclude: ['@sanity/client']
-    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))

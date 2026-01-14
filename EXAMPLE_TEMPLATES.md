@@ -1,4 +1,4 @@
-# 📦 示例模板使用指南
+# 📦 示例模板使用指南（Supabase 版）
 
 ## 🎉 概述
 
@@ -40,82 +40,40 @@
 npm run dev
 ```
 
-2. 访问初始化页面：
+2. 先登录管理员：
+```
+http://localhost:4321/login
+```
+
+3. 访问初始化页面：
 ```
 http://localhost:4321/setup
 ```
 
-3. 点击 **"🎉 初始化示例数据"** 按钮
+4. 点击 **"🎉 初始化示例数据"** 按钮
 
-4. 等待提示成功后，返回首页查看示例数据
-
-### 方法二：使用浏览器控制台
-
-1. 访问博客首页 `http://localhost:4321/`
-
-2. 打开浏览器控制台（F12）
-
-3. 加载示例模板脚本：
-```javascript
-// 加载脚本（如果页面没有自动加载）
-const script = document.createElement('script');
-script.type = 'module';
-script.src = '/src/scripts/example-templates.js';
-document.body.appendChild(script);
-```
-
-4. 初始化数据：
-```javascript
-window.exampleTemplates.initializeExampleData();
-```
-
-5. 刷新页面查看效果
+5. 等待提示成功后，返回首页查看示例数据
 
 ## 📋 管理示例数据
 
 ### 查看当前数据状态
-```javascript
-// 检查是否已初始化
-localStorage.getItem('examples_initialized');
-
-// 查看各模块数据数量
-console.log('生活瞬间:', JSON.parse(localStorage.getItem('life_moments') || '[]').length);
-console.log('哲学思考:', JSON.parse(localStorage.getItem('philosophy_thoughts') || '[]').length);
-console.log('吐槽内容:', JSON.parse(localStorage.getItem('rants') || '[]').length);
-console.log('学习项目:', JSON.parse(localStorage.getItem('learning_projects') || '[]').length);
-console.log('代码项目:', JSON.parse(localStorage.getItem('code_projects') || '[]').length);
-```
+- 直接打开各模块列表页查看即可（数据已写入 Supabase）。
+- `/blog` 页面也会聚合展示 5 个模块的最新内容。
 
 ### 重置所有数据
 
-在 `/setup` 页面点击 **"🔄 清除所有数据并重新初始化"** 按钮
-
-或在控制台执行：
-```javascript
-window.exampleTemplates.resetAllData();
-```
-
-### 清除特定模块数据
-```javascript
-// 只清除生活模块
-localStorage.removeItem('life_moments');
-
-// 只清除哲学模块
-localStorage.removeItem('philosophy_thoughts');
-
-// 以此类推...
-```
+在 `/setup` 页面点击 **"🔄 清除示例数据并重新初始化"** 按钮  
+该操作只会删除“示例数据”（按固定 slug 删除），不会影响你自己创建的内容。
 
 ## 📁 文件结构
 
 ```
 Blog/
 ├── src/
-│   ├── scripts/
-│   │   ├── example-templates.js   # 示例模板数据（新增）
-│   │   └── content-manager.js     # 内容管理器（已有）
 │   └── pages/
-│       └── setup.astro            # 初始化页面（新增）
+│       ├── setup.astro                  # 初始化页面（按钮触发服务端写入）
+│       └── api/setup/examples.ts        # 示例数据写入/清理（Supabase）
+├── supabase-schema.sql                  # Supabase 建表脚本
 └── EXAMPLE_TEMPLATES.md           # 本说明文档（新增）
 ```
 
@@ -157,40 +115,21 @@ Blog/
 
 ## 🔧 自定义示例
 
-如果你想修改或添加示例，编辑 `src/scripts/example-templates.js` 文件：
+如果你想修改或添加示例，编辑 `src/pages/api/setup/examples.ts` 文件里的示例数组（如 `lifeExamples` / `projectsExamples`）。
 
-```javascript
-// 添加新的生活模块示例
-export const lifeExamples = [
-  {
-    title: '你的标题',
-    date: '2024年1月',
-    content: '你的内容...',
-    mood: '😊 你的心情',
-    tags: ['标签1', '标签2']
-  },
-  // 更多示例...
-];
-```
-
-修改后，清除数据并重新初始化即可看到新的示例。
+修改后，到 `/setup` 页面执行“清除示例数据并重新初始化”即可看到效果。
 
 ## ⚠️ 注意事项
 
 1. **数据存储位置**
-   - 所有数据存储在浏览器的 `localStorage` 中
-   - 仅在当前浏览器可见
-   - 清除浏览器数据会丢失所有内容
+   - 示例数据会写入 Supabase 数据库（不同设备/浏览器可共享）
 
 2. **初始化逻辑**
-   - 首次初始化后会设置标记，避免重复初始化
-   - 不会覆盖已有的数据
-   - 如需重新初始化，请先清除数据
+   - 按 `slug` 去重：如果示例 slug 已存在，会自动跳过，不会覆盖
+   - “重置”只清理示例 slug，不会删除你自己创建的内容
 
 3. **数据备份**
-   - 建议定期导出重要数据
-   - 可以使用浏览器的导出功能
-   - 或者添加自己的导出功能
+   - 建议在 Supabase 侧定期做备份（或用 SQL/CSV 导出）
 
 ## 🎯 下一步建议
 

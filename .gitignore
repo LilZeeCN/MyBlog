@@ -29,3 +29,9 @@ pnpm-debug.log*
 
 # astro
 .astro/
+
+# local data (legacy)
+.data/
+
+# vercel build output
+.vercel/

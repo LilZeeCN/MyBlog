@@ -74,18 +74,15 @@ import Layout from '../../layouts/Layout.astro';
       if (!loading || !notFound || !content) return;
 
       try {
-        const response = await fetch('/api/rants');
-        if (!response.ok) throw new Error('获取数据失败');
-        const allRants = await response.json();
-
-        const rant = allRants.find((r: any) => r.slug === slug);
-
         loading.classList.add('hidden');
-
-        if (!rant) {
+        const response = await fetch(`/api/rants/${encodeURIComponent(slug)}`);
+        if (response.status === 404) {
           notFound.classList.remove('hidden');
           return;
         }
+        if (!response.ok) throw new Error('获取数据失败');
+
+        const rant = await response.json();
 
         content.classList.remove('hidden');
 

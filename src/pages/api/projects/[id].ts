@@ -4,14 +4,67 @@ import { verifySession } from '@/lib/auth.js';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
-  const { id } = params;
+function safeDecodeURIComponent(value: string | undefined): string {
+  if (!value) return '';
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
-  const { data, error } = await supabase
+async function resolveCodeProjectId(identifier: string): Promise<{
+  id: string | null;
+  error: unknown | null;
+}> {
+  const byId = await supabase
+    .from('code_projects')
+    .select('id')
+    .eq('id', identifier)
+    .maybeSingle();
+
+  if (byId.error) return { id: null, error: byId.error };
+  if (byId.data?.id) return { id: byId.data.id, error: null };
+
+  const bySlug = await supabase
+    .from('code_projects')
+    .select('id')
+    .eq('slug', identifier)
+    .maybeSingle();
+
+  if (bySlug.error) return { id: null, error: bySlug.error };
+  return { id: bySlug.data?.id ?? null, error: null };
+}
+
+export const GET: APIRoute = async ({ params }) => {
+  const identifier = safeDecodeURIComponent(params.id);
+  if (!identifier) {
+    return new Response(JSON.stringify({ error: '内容不存在' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  let { data, error } = await supabase
     .from('code_projects')
     .select('*')
-    .eq('id', id)
-    .single();
+    .eq('id', identifier)
+    .maybeSingle();
+
+  if (error) {
+    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (!data) {
+    ({ data, error } = await supabase
+      .from('code_projects')
+      .select('*')
+      .eq('slug', identifier)
+      .maybeSingle());
+  }
 
   if (error || !data) {
     return new Response(JSON.stringify({ error: '内容不存在' }), {
@@ -46,12 +99,25 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     });
   }
 
-  const { id } = params;
+  const identifier = safeDecodeURIComponent(params.id);
+  const resolved = await resolveCodeProjectId(identifier);
+  if (resolved.error) {
+    return new Response(JSON.stringify({ error: '删除失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  if (!resolved.id) {
+    return new Response(JSON.stringify({ error: '内容不存在' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   const { error } = await supabase
     .from('code_projects')
     .delete()
-    .eq('id', id);
+    .eq('id', resolved.id);
 
   if (error) {
     return new Response(JSON.stringify({ error: '内容不存在' }), {
@@ -76,7 +142,20 @@ export const PUT: APIRoute = async ({ params, request }) => {
     });
   }
 
-  const { id } = params;
+  const identifier = safeDecodeURIComponent(params.id);
+  const resolved = await resolveCodeProjectId(identifier);
+  if (resolved.error) {
+    return new Response(JSON.stringify({ error: '更新失败' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  if (!resolved.id) {
+    return new Response(JSON.stringify({ error: '内容不存在' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
   const body = await request.json();
 
   const { data: updated, error } = await supabase
@@ -93,7 +172,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
       forks: body.forks,
       updated_at: new Date().toISOString()
     })
-    .eq('id', id)
+    .eq('id', resolved.id)
     .select()
     .single();
 
