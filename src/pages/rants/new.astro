@@ -52,7 +52,7 @@ import Layout from '../../layouts/Layout.astro';
   <script>
     async function ensureAuth(): Promise<boolean> {
       try {
-        const res = await fetch('/api/auth/check');
+        const res = await fetch('/api/auth/check', { cache: 'no-store' });
         const data = await res.json().catch(() => ({}));
         if (data.authenticated) return true;
       } catch {

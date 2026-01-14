@@ -9,6 +9,10 @@ export const GET: APIRoute = async ({ cookies }) => {
 
   return new Response(JSON.stringify({ authenticated }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      Vary: 'Cookie'
+    }
   });
 };

@@ -100,7 +100,7 @@ const {
       let authStatusPromise = null;
 
       async function fetchAuthStatus() {
-        const response = await fetch('/api/auth/check');
+        const response = await fetch('/api/auth/check', { cache: 'no-store' });
         if (!response.ok) return { authenticated: false };
         const data = await response.json().catch(() => ({}));
         return { authenticated: Boolean(data.authenticated) };

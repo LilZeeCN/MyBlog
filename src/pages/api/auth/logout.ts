@@ -18,12 +18,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        Vary: 'Cookie'
+      }
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: '登出失败' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        Vary: 'Cookie'
+      }
     });
   }
 };

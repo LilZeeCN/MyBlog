@@ -1,19 +1,8 @@
 import type { AstroCookies } from 'astro';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
-// 简单的内存会话存储
-const sessions = new Map<string, { expires: number }>();
-
-// 定期清理过期会话（每小时一次）
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [token, data] of sessions.entries()) {
-      if (data.expires < now) {
-        sessions.delete(token);
-      }
-    }
-  }, 1000 * 60 * 60);
-}
+const SESSION_DAYS = 7;
+const SESSION_COOKIE_NAME = 'session';
 
 /**
  * 生成随机会话令牌
@@ -28,8 +17,8 @@ export function generateSessionToken(): string {
  * 创建新会话
  */
 export function createSession(token: string): void {
-  const expires = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 天
-  sessions.set(token, { expires });
+  // 兼容旧调用：改为无状态 Cookie，不需要服务端存储
+  void token;
 }
 
 /**
@@ -38,22 +27,29 @@ export function createSession(token: string): void {
 export function isSessionValid(token: string | undefined): boolean {
   if (!token) return false;
 
-  const session = sessions.get(token);
-  if (!session) return false;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
 
-  if (session.expires < Date.now()) {
-    sessions.delete(token);
-    return false;
-  }
+  const [sessionToken, expiresRaw, signature] = parts;
+  if (!sessionToken || !expiresRaw || !signature) return false;
 
-  return true;
+  const expires = Number(expiresRaw);
+  if (!Number.isFinite(expires)) return false;
+  if (expires < Date.now()) return false;
+
+  const secret = getAuthSecret();
+  if (!secret) return false;
+
+  const expected = signSessionValue(secret, sessionToken, expiresRaw);
+  return safeEqualHex(signature, expected);
 }
 
 /**
  * 删除会话
  */
 export function deleteSession(token: string): void {
-  sessions.delete(token);
+  // 兼容旧调用：无状态 Cookie 不需要服务端删除
+  void token;
 }
 
 /**
@@ -75,12 +71,22 @@ export async function verifySession(request: Request): Promise<{ authenticated: 
  * 设置会话 Cookie
  */
 export function setSessionCookie(cookies: AstroCookies, token: string): void {
-  cookies.set('session', token, {
+  const expires = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
+  const secret = getAuthSecret();
+  if (!secret) {
+    console.error('AUTH_SECRET (or ADMIN_PASSWORD fallback) environment variable is not set');
+    return;
+  }
+
+  const signature = signSessionValue(secret, token, String(expires));
+  const cookieValue = `${token}.${expires}.${signature}`;
+
+  cookies.set(SESSION_COOKIE_NAME, cookieValue, {
     path: '/',
     httpOnly: true,
     secure: import.meta.env.PROD, // 生产环境使用 HTTPS
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7 // 7 天
+    maxAge: 60 * 60 * 24 * SESSION_DAYS // 7 天
   });
 }
 
@@ -88,7 +94,7 @@ export function setSessionCookie(cookies: AstroCookies, token: string): void {
  * 清除会话 Cookie
  */
 export function clearSessionCookie(cookies: AstroCookies): void {
-  cookies.delete('session', {
+  cookies.delete(SESSION_COOKIE_NAME, {
     path: '/'
   });
 }
@@ -117,4 +123,22 @@ export function verifyAdminPassword(password: string): boolean {
     return false;
   }
   return password === adminPassword;
+}
+
+function getAuthSecret(): string | undefined {
+  return import.meta.env.AUTH_SECRET || import.meta.env.ADMIN_PASSWORD;
+}
+
+function signSessionValue(secret: string, token: string, expires: string): string {
+  const data = `${token}.${expires}`;
+  return createHmac('sha256', secret).update(data).digest('hex');
+}
+
+function safeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+  } catch {
+    return false;
+  }
 }
